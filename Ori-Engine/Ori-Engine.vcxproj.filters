@@ -1,0 +1,242 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="Systems\Graphics\Shaders\common_deferred.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Systems\Graphics\Shaders\common_pbr.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Systems\Graphics\Shaders\common_hdr.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Systems\Graphics\Shaders\common_lights.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Components\CameraComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\Component.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\DrawComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Cameras\CameraSystem.cpp">
+      <Filter>Systems\Cameras</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\D3D11Renderer.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Framework.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Graphics\Tools\ImageBasedLightingBaker.cpp">
+      <Filter>Systems\Graphics\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Graphics\Tools\DeferredRenderer.cpp">
+      <Filter>Systems\Graphics\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Graphics\GraphicsSystem.cpp">
+      <Filter>Systems\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Input\InputSystem.cpp">
+      <Filter>Systems\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\LightComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Main.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Graphics\Material.cpp">
+      <Filter>Systems\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Graphics\Mesh.cpp">
+      <Filter>Systems\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Graphics\Tools\PostProcessor.cpp">
+      <Filter>Systems\Graphics\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Graphics\Tools\QuadRenderer.cpp">
+      <Filter>Systems\Graphics\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Graphics\Tools\ShadowRenderer.cpp">
+      <Filter>Systems\Graphics\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Graphics\Tools\SkyBoxRenderer.cpp">
+      <Filter>Systems\Graphics\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\TransformComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Scenes\Entity.cpp">
+      <Filter>Systems\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Scenes\Scene.cpp">
+      <Filter>Systems\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Scenes\SceneSystem.cpp">
+      <Filter>Systems\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Scenes\SkyBox.cpp">
+      <Filter>Systems\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Graphics\Shader.cpp">
+      <Filter>Systems\Graphics</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Components\CameraComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\Component.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\DrawComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Cameras\CameraSystem.h">
+      <Filter>Systems\Cameras</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\D3D11Renderer.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Framework.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Graphics\Tools\ImageBasedLightingBaker.h">
+      <Filter>Systems\Graphics\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Graphics\Tools\DeferredRenderer.h">
+      <Filter>Systems\Graphics\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Graphics\GraphicsSystem.h">
+      <Filter>Systems\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Input\InputSystem.h">
+      <Filter>Systems\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\LightComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Graphics\Material.h">
+      <Filter>Systems\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Graphics\Mesh.h">
+      <Filter>Systems\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Graphics\Tools\PostProcessor.h">
+      <Filter>Systems\Graphics\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Graphics\Tools\QuadRenderer.h">
+      <Filter>Systems\Graphics\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Graphics\Tools\ShadowRenderer.h">
+      <Filter>Systems\Graphics\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Graphics\Tools\SkyBoxRenderer.h">
+      <Filter>Systems\Graphics\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\TransformComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Scenes\Entity.h">
+      <Filter>Systems\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Scenes\Scene.h">
+      <Filter>Systems\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Scenes\SceneSystem.h">
+      <Filter>Systems\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Scenes\SkyBox.h">
+      <Filter>Systems\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Graphics\Shader.h">
+      <Filter>Systems\Graphics</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Components">
+      <UniqueIdentifier>{b23a2aab-1bca-4dc6-8b3d-492e0c080037}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core">
+      <UniqueIdentifier>{b10309e9-56fc-44bb-9b59-485ce765036e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems">
+      <UniqueIdentifier>{2fcc5218-990c-42f7-a2bc-f378267e9706}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\Cameras">
+      <UniqueIdentifier>{93d71192-f9f6-40ca-8eac-4cc817f3a915}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\Graphics">
+      <UniqueIdentifier>{44c746ab-de18-4236-9f2b-40979d980e4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\Graphics\Tools">
+      <UniqueIdentifier>{828d12f7-4a9a-462f-b11c-8689cff0fa55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\Graphics\Shaders">
+      <UniqueIdentifier>{78637fa1-38ce-4f9c-81b4-5319008392c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\Input">
+      <UniqueIdentifier>{ed33a0b2-2988-4688-9566-14b9ca1107c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\Scenes">
+      <UniqueIdentifier>{1c6085d1-760f-4f74-9978-813f07567293}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Systems\Graphics\Shaders\deferred_buffer_material_test_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\deferred_buffer_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\deferred_buffer_vertex.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\deferred_composite_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\post_bloom_combine_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\post_bloom_extract_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\post_blur_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\post_luminance_adapt_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\post_luminance_buffer_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\post_tone_map_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\quad_vertex.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\shadow_vertex.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\skybox_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\skybox_vertex.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\bake_brdf_lut_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\bake_pfem_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+  </ItemGroup>
+</Project>
