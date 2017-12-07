@@ -66,6 +66,16 @@ void Framework::Initialize()
 	//current_scene.AddLight();
 	current_scene.mSun = sun;
 
+	Entity* emitter = new Entity(
+		std::make_unique<TransformComponent>(
+			XMFLOAT3(0, 2.2f, -2.2f))	// position
+	);
+	emitter->AddComponent(std::make_unique<ParticleEmitterComponent>(
+		emitter->GetTransformComponent(),
+		mcp_device.Get())
+	);
+	current_scene.AddEntity(emitter);
+
 	//std::shared_ptr<Mesh> cube_mesh = std::make_shared<Mesh>(mcp_device.Get(), "Resources/Mesh Files/cube.obj");
 	std::shared_ptr<Mesh> sphere_mesh = std::make_shared<Mesh>(mcp_device.Get(), "Resources/Mesh Files/sphere.obj");
 
@@ -314,6 +324,7 @@ void Framework::Update(float p_delta_time, float p_total_time)
 {
 	// passing events instead of reference control in input system?
 	mup_input_system->Update(p_delta_time);
+	mup_graphics_system->Update(mup_scene_manager->GetCurrentScene(), p_delta_time);
 }
 
 void Framework::Draw(float p_delta_time, float p_total_time)

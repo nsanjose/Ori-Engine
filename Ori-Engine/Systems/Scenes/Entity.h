@@ -18,6 +18,21 @@ public:
 	TransformComponent& GetTransformComponent() const;
 
 	template<class T>
+	bool HasComponent()
+	{
+		const std::type_info& search_typeid = typeid(T);
+		for (int i = 0; i < components.size(); i++)
+		{
+			auto c = components[i].get();
+			if (c && typeid(*c) == search_typeid)
+			{
+				return true;
+			}
+		}
+		return false;
+	};
+
+	template<class T>
 	T* GetComponentByType() const
 	{
 		const std::type_info& search_typeid = typeid(T);

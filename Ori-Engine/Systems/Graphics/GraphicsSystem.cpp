@@ -23,6 +23,7 @@ GraphicsSystem::GraphicsSystem(ID3D11Device* pp_device, ID3D11DeviceContext* pp_
 	mup_image_based_lighting_baker = std::make_unique<ImageBasedLightingBaker>(mp_device, mp_context, *mup_quad_renderer.get());
 	mup_deferred_renderer = std::make_unique<DeferredRenderer>(mp_device, mp_context, mr_width, mr_height, mcp_sampler_filtering_choice.Get(), *mup_shadow_renderer.get(), *mup_quad_renderer.get());
 	mup_skybox_renderer = std::make_unique<SkyBoxRenderer>(mp_device, mp_context);
+	mup_particle_manager = std::make_unique<ParticleManager>(mp_device, mp_context);
 	mup_post_processor = std::make_unique<PostProcessor>(mp_device, mp_context, mr_width, mr_height, *mup_quad_renderer.get());
 
 	/*
@@ -65,17 +66,20 @@ ImageBasedLightingBaker * GraphicsSystem::GetImageBasedLightingBaker()
 	return mup_image_based_lighting_baker.get();
 }
 
+void GraphicsSystem::Update(Scene* pp_current_scene, float p_delta_time)
+{
+	mup_particle_manager->Update(mup_particle_manager->CollectEntitiesWithEmitters(pp_current_scene->GetEntities()), p_delta_time);
+}
+
 void GraphicsSystem::Draw(Scene* pp_current_scene, float p_delta_time)
 {
-	if (pp_current_scene == nullptr || pp_current_scene->GetCurrentCamera() == nullptr || pp_current_scene->GetCurrentSkyBox() == nullptr)
-	{
-		return;
-	}
+	if (pp_current_scene == nullptr || pp_current_scene->GetCurrentCamera() == nullptr || pp_current_scene->GetCurrentSkyBox() == nullptr) { return; }
 
 	mup_shadow_renderer->RenderCascadeShadowMap(pp_current_scene->GetEntities(), *pp_current_scene->mSun, *pp_current_scene->GetCurrentCamera());
 	mup_deferred_renderer->PopulateGBuffers(pp_current_scene->GetEntities(), *pp_current_scene->GetCurrentCamera());
 	// blur/soften shadow channel of gbuffer
 	mup_deferred_renderer->CompositeShading(*pp_current_scene->GetCurrentCamera(), *pp_current_scene->mSun, *pp_current_scene->GetCurrentSkyBox(), mup_post_processor->GetFrameBufferRtv());
+	mup_particle_manager->Render(*pp_current_scene->GetCurrentCamera()->GetComponentByType<CameraComponent>(), mup_particle_manager->CollectEntitiesWithEmitters(pp_current_scene->GetEntities()), mup_post_processor->GetFrameBufferRtv(), mup_deferred_renderer->GetDepthDsv());
 	mup_skybox_renderer->RenderStenciledSkyBox(pp_current_scene->GetCurrentSkyBox()->GetEnvMapSrv(), *pp_current_scene->GetCurrentCamera(), mup_deferred_renderer->GetDepthDsv(), mup_post_processor->GetFrameBufferRtv());
 	// transparent draws
 	mup_post_processor->GenerateAverageLuminance(mup_post_processor->GetFrameBufferSrv(), p_delta_time);

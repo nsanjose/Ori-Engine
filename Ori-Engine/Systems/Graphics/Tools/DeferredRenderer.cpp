@@ -132,6 +132,9 @@ void DeferredRenderer::PopulateGBuffers(const std::vector<std::unique_ptr<Entity
 	{
 		Entity* entity = pup_opaque_draw_entities[i].get();
 		TransformComponent& transform_component = entity->GetTransformComponent();
+
+		if (!(entity->HasComponent<DrawComponent>())) { continue; }
+
 		DrawComponent* draw_component = entity->GetComponentByType<DrawComponent>();
 		Mesh* mesh = draw_component->GetMesh();
 		Material* material = draw_component->GetMaterial();

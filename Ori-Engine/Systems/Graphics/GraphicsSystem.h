@@ -9,6 +9,7 @@
 #include "Tools\ImageBasedLightingBaker.h"
 #include "Tools\ShadowRenderer.h"
 #include "Tools\SkyBoxRenderer.h"
+#include "Tools\ParticleManager.h"
 #include "Tools\PostProcessor.h"
 #include "Tools\QuadRenderer.h"
 
@@ -21,7 +22,8 @@ public:
 
 	ShadowRenderer * GetShadowRenderer();
 	ImageBasedLightingBaker * GetImageBasedLightingBaker();
-
+	
+	void Update(Scene* pp_current_scene, float p_delta_time);
 	void Draw(Scene* pp_current_scene, float p_delta_time);
 
 private:
@@ -38,6 +40,7 @@ private:
 	std::unique_ptr<ImageBasedLightingBaker> mup_image_based_lighting_baker;
 	std::unique_ptr<ShadowRenderer> mup_shadow_renderer;
 	std::unique_ptr<SkyBoxRenderer> mup_skybox_renderer;
+	std::unique_ptr<ParticleManager> mup_particle_manager;
 	std::unique_ptr<PostProcessor> mup_post_processor;
 	std::unique_ptr<QuadRenderer> mup_quad_renderer;
 

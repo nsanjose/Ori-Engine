@@ -88,6 +88,12 @@
     <ClCompile Include="Systems\Graphics\Shader.cpp">
       <Filter>Systems\Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="Systems\Graphics\Tools\ParticleManager.cpp">
+      <Filter>Systems\Graphics\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\ParticleEmitterComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Components\CameraComponent.h">
@@ -158,6 +164,12 @@
     </ClInclude>
     <ClInclude Include="Systems\Graphics\Shader.h">
       <Filter>Systems\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Graphics\Tools\ParticleManager.h">
+      <Filter>Systems\Graphics\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\ParticleEmitterComponent.h">
+      <Filter>Components</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -236,6 +248,12 @@
       <Filter>Systems\Graphics\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Systems\Graphics\Shaders\bake_pfem_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\particle_vertex.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\particle_pixel.hlsl">
       <Filter>Systems\Graphics\Shaders</Filter>
     </FxCompile>
   </ItemGroup>

@@ -327,6 +327,8 @@ void ShadowRenderer::RenderCascadeShadowMap(const std::vector<std::unique_ptr<En
 		{
 			Entity* entity = pOpaqueEntities[i].get();
 
+			if (!(entity->HasComponent<DrawComponent>())) { continue; }
+
 			XMMATRIX entity_world_matrix = XMMatrixTranspose(XMLoadFloat4x4(&entity->GetTransformComponent().GetWorldMatrix()));
 			XMMATRIX temp_world_view_projection_matrix = entity_world_matrix * shadow_view_matrix * shadow_cascade_projection_matrix;
 			XMFLOAT4X4 world_view_projection_matrix;
