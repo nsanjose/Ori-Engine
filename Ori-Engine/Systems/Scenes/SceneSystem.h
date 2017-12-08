@@ -15,6 +15,8 @@ public:
 	Scene& AddEmptyScene();
 	Scene* GetCurrentScene();
 
+	void UpdateMatrices();
+
 private:
 	std::vector<std::unique_ptr<Scene>> mup_scenes;
 	Scene* mp_current_scene;

@@ -24,7 +24,8 @@ void CameraSystem::MoveRelative(Entity& pr_camera, float p_difference_x, float p
 
 	// relativise desired direction
 	XMVECTOR movement = XMVector3Rotate(XMVectorSet(p_difference_x, p_difference_y, p_difference_z, 0), XMLoadFloat4(&camera_component->quaternion));
-	XMStoreFloat3(&transform_component.position, XMLoadFloat3(&transform_component.position) + (movement * m_move_scale));
+	XMStoreFloat3(&transform_component.m_position, XMLoadFloat3(&transform_component.m_position) + (movement * m_move_scale));
+	transform_component.m_is_world_matrix_dirty = true;
 
 	UpdateViewMatrix(pr_camera);
 }
@@ -35,14 +36,15 @@ void CameraSystem::Rotate(Entity& pr_camera, float p_difference_x, float p_diffe
 	CameraComponent* camera_component = pr_camera.GetComponentByType<CameraComponent>();
 
 	// Adjust the current rotation
-	transform_component.rotation.x += p_difference_x * .005f;
-	transform_component.rotation.y += p_difference_y * .005f;
+	transform_component.m_rotation.x += p_difference_x * .005f;
+	transform_component.m_rotation.y += p_difference_y * .005f;
+	transform_component.m_is_world_matrix_dirty = true;
 
 	// Clamp the x between PI/2 and -PI/2
-	transform_component.rotation.x = max(min(transform_component.rotation.x, XM_PIDIV2), -XM_PIDIV2);
+	transform_component.m_rotation.x = max(min(transform_component.m_rotation.x, XM_PIDIV2), -XM_PIDIV2);
 
 	// Update quaternion
-	XMStoreFloat4(&camera_component->quaternion, XMQuaternionRotationRollPitchYaw(transform_component.rotation.x, transform_component.rotation.y, 0));
+	XMStoreFloat4(&camera_component->quaternion, XMQuaternionRotationRollPitchYaw(transform_component.m_rotation.x, transform_component.m_rotation.y, 0));
 
 	UpdateViewMatrix(pr_camera);
 }
@@ -63,12 +65,11 @@ void CameraSystem::UpdateViewMatrix(Entity& pr_camera)
 
 	// update view matrix
 	XMMATRIX view = XMMatrixLookToLH(
-		XMLoadFloat3(&transform_component.position),	// camera position
+		XMLoadFloat3(&transform_component.m_position),	// camera position
 		camera_direction,								// camera direction
 		XMVectorSet(0, 1, 0, 0)							// camera's up axis
 	);
 	XMStoreFloat4x4(&camera_component->m_view_matrix, XMMatrixTranspose(view));
-
 	XMStoreFloat4x4(&camera_component->m_inverse_view, XMMatrixTranspose(XMMatrixInverse(nullptr, view)));
 
 	XMMATRIX temp_projection_matrix = XMMatrixTranspose(XMLoadFloat4x4(&camera_component->m_projection_matrix));
@@ -80,14 +81,14 @@ void CameraSystem::UpdateViewMatrix(Entity& pr_camera)
 void CameraSystem::UpdateProjectionMatrix(Entity& pr_camera, float p_aspect_ratio)
 {
 	CameraComponent* camera_component = pr_camera.GetComponentByType<CameraComponent>();
-	float near_clip = camera_component->GetNearClip();	// all projection matrix constructor parameters should be new/passed? (none from current camera unless specified)
+	float near_clip = camera_component->GetNearClip();
 	float far_clip = camera_component->GetFarClip();
 
 	XMMATRIX temp_projection_matrix = XMMatrixPerspectiveFovLH(
-		0.25f * XM_PI,		// Field of View Angle
-		p_aspect_ratio,		// Aspect ratio
-		near_clip,			// Near clip plane distance
-		far_clip);			// Far clip plane distance
+		camera_component->GetFov(),	// Field of View Angle
+		p_aspect_ratio,				// Aspect ratio
+		near_clip,					// Near clip plane distance
+		far_clip);					// Far clip plane distance
 	XMStoreFloat4x4(&camera_component->m_projection_matrix, XMMatrixTranspose(temp_projection_matrix));
 
 	camera_component->m_projection_a = far_clip / (far_clip - near_clip);	// access elements _34, _43 instead of calculating

@@ -41,9 +41,9 @@ void ShadowRenderer::EnableShadowing(Entity& pr_light)
 
 	// View
 	XMMATRIX shadow_view_matrix = XMMatrixLookToLH(
-		XMVectorSet(transform_component.position.x, transform_component.position.y, transform_component.position.z, 0),	// Light position
-		XMVectorSet(transform_component.rotation.x, transform_component.rotation.y, transform_component.rotation.z, 0),	// Light direction
-		XMVectorSet(0, 0, 1, 0));																							// Up direction
+		XMVectorSet(transform_component.m_position.x, transform_component.m_position.y, transform_component.m_position.z, 0),	// Light position
+		XMVectorSet(transform_component.m_rotation.x, transform_component.m_rotation.y, transform_component.m_rotation.z, 0),	// Light direction
+		XMVectorSet(0, 0, 1, 0));																								// Up direction
 	XMStoreFloat4x4(&shadow.shadowViewMatrix, XMMatrixTranspose(shadow_view_matrix));
 
 	// Projection (type dependant)
@@ -329,7 +329,7 @@ void ShadowRenderer::RenderCascadeShadowMap(const std::vector<std::unique_ptr<En
 
 			if (!(entity->HasComponent<DrawComponent>())) { continue; }
 
-			XMMATRIX entity_world_matrix = XMMatrixTranspose(XMLoadFloat4x4(&entity->GetTransformComponent().GetWorldMatrix()));
+			XMMATRIX entity_world_matrix = XMMatrixTranspose(XMLoadFloat4x4(&entity->GetTransformComponent().m_world_matrix));
 			XMMATRIX temp_world_view_projection_matrix = entity_world_matrix * shadow_view_matrix * shadow_cascade_projection_matrix;
 			XMFLOAT4X4 world_view_projection_matrix;
 			XMStoreFloat4x4(&world_view_projection_matrix, XMMatrixTranspose(temp_world_view_projection_matrix));

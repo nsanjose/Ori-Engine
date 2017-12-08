@@ -15,6 +15,7 @@ struct Particle
 	DirectX::XMFLOAT4 m_position = { 0, 0, 0, 1 };
 	DirectX::XMFLOAT4 m_color;
 	DirectX::XMFLOAT3 m_velocity;
+	DirectX::XMFLOAT3 m_translation;
 	float m_age;
 };
 
@@ -23,6 +24,8 @@ struct ParticleVertex
 	DirectX::XMFLOAT4 m_position;
 	//DirectX::XMFLOAT2 tex_coord;
 	DirectX::XMFLOAT4 m_color;
+	//DirectX::XMFLOAT3 m_translation;
+	DirectX::XMFLOAT4X4 m_world_matrix;
 };
 
 class ParticleEmitterComponent : public Component

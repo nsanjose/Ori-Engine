@@ -324,6 +324,7 @@ void Framework::Update(float p_delta_time, float p_total_time)
 {
 	// passing events instead of reference control in input system?
 	mup_input_system->Update(p_delta_time);
+	mup_scene_manager->UpdateMatrices();
 	mup_graphics_system->Update(mup_scene_manager->GetCurrentScene(), p_delta_time);
 }
 

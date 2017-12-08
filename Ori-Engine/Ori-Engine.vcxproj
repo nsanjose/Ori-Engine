@@ -212,6 +212,9 @@
     <None Include="Systems\Graphics\Shaders\common_pbr.hlsl">
       <FileType>Document</FileType>
     </None>
+    <None Include="Systems\Graphics\Shaders\common_particle.hlsl">
+      <FileType>Document</FileType>
+    </None>
     <FxCompile Include="Systems\Graphics\Shaders\deferred_buffer_material_test_pixel.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>

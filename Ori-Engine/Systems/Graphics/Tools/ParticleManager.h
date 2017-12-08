@@ -17,9 +17,7 @@ public:
 	ParticleManager(ID3D11Device* pp_device, ID3D11DeviceContext* pp_context);
 	~ParticleManager();
 	
-	// Collect only entities with emitter components for use in other member functions
 	std::vector<Entity*> CollectEntitiesWithEmitters(std::vector<std::unique_ptr<Entity>>& pup_entities);
-
 	void Update(std::vector<Entity*>& pp_entities, float p_delta_time);
 	void Render(const CameraComponent& pr_camera, const std::vector<Entity*>& pp_entities, ID3D11RenderTargetView* pp_rtv, ID3D11DepthStencilView* pp_dsv);
 

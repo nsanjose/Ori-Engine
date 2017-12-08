@@ -15,18 +15,21 @@ CameraComponent::CameraComponent() : Component()
 
 CameraComponent::CameraComponent(TransformComponent& pr_transform_component, float p_fov, float p_aspect_ratio, float p_near_clip, float p_far_clip) : Component()
 {
-	XMStoreFloat4(&quaternion, XMQuaternionRotationRollPitchYaw(pr_transform_component.rotation.x, pr_transform_component.rotation.y, 0));
+	// View
+	XMStoreFloat4(&quaternion, XMQuaternionRotationRollPitchYaw(pr_transform_component.m_rotation.x, pr_transform_component.m_rotation.y, 0));
 
 	XMVECTOR camera_direction = XMVector3Rotate(XMVectorSet(0, 0, 1, 0), XMLoadFloat4(&quaternion));
 	XMStoreFloat3(&forward, camera_direction);
 
 	XMMATRIX view = XMMatrixLookToLH(
-		XMLoadFloat3(&pr_transform_component.position),		// camera position
+		XMLoadFloat3(&pr_transform_component.m_position),	// camera position
 		camera_direction,									// camera direction
 		XMVectorSet(0, 1, 0, 0)								// camera's up direction
 	);
 	XMStoreFloat4x4(&m_view_matrix, XMMatrixTranspose(view));
+	XMStoreFloat4x4(&m_inverse_view, XMMatrixTranspose(XMMatrixInverse(nullptr, view)));
 
+	// Projection
 	m_fov = p_fov;
 	m_aspect_ratio = p_aspect_ratio;
 	m_near_clip = p_near_clip;
@@ -37,6 +40,7 @@ CameraComponent::CameraComponent(TransformComponent& pr_transform_component, flo
 		m_near_clip,		// Near clip plane distance
 		m_far_clip);		// Far clip plane distance
 	XMStoreFloat4x4(&m_projection_matrix, XMMatrixTranspose(proj));
+	XMStoreFloat4x4(&m_inverse_projection_matrix, XMMatrixTranspose(XMMatrixInverse(nullptr, proj)));
 
 	m_projection_a = m_far_clip / (m_far_clip - m_near_clip);
 	m_projection_b = (-m_far_clip * m_near_clip) / (m_far_clip - m_near_clip);
@@ -45,8 +49,6 @@ CameraComponent::CameraComponent(TransformComponent& pr_transform_component, flo
 	XMMATRIX invVP = XMMatrixInverse(nullptr, viewProj);
 	XMStoreFloat4x4(&m_inverse_view_projection_matrix, XMMatrixTranspose(invVP));
 
-	XMStoreFloat4x4(&m_inverse_view, XMMatrixTranspose(XMMatrixInverse(nullptr, view)));
-	XMStoreFloat4x4(&m_inverse_projection_matrix, XMMatrixTranspose(XMMatrixInverse(nullptr, proj)));
 }
 
 CameraComponent::~CameraComponent()

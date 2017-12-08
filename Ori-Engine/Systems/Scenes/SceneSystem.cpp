@@ -31,3 +31,13 @@ Scene* SceneSystem::GetCurrentScene()
 {
 	return mp_current_scene;
 }
+
+void SceneSystem::UpdateMatrices()
+{
+	// Update all world matrices
+	for (int i = 0; i < mp_current_scene->GetEntities().size(); i++)
+	{
+		mp_current_scene->GetEntities()[i].get()->GetTransformComponent().UpdateWorldMatrix();
+	}
+	mp_current_scene->GetCurrentCamera()->GetTransformComponent().UpdateWorldMatrix();
+}

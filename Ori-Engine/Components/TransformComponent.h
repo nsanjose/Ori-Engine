@@ -13,14 +13,13 @@ public:
 	TransformComponent(DirectX::XMFLOAT3 p_position, DirectX::XMFLOAT3 p_rotation, DirectX::XMFLOAT3 p_scale);
 	~TransformComponent();
 
-	void UpdateWorldMatrix();	// dirty flag?
-	DirectX::XMFLOAT4X4 GetWorldMatrix();
+	DirectX::XMFLOAT3 m_position;
+	DirectX::XMFLOAT3 m_rotation;
+	DirectX::XMFLOAT3 m_scale;
 
-	DirectX::XMFLOAT3 position;
-	DirectX::XMFLOAT3 rotation;
-	DirectX::XMFLOAT3 scale;
-	
-private:
-	DirectX::XMFLOAT4X4 world_matrix;
+	bool m_is_world_matrix_dirty;
+
+	void UpdateWorldMatrix();
+	DirectX::XMFLOAT4X4 m_world_matrix;
 };
 

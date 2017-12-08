@@ -145,8 +145,8 @@ void DeferredRenderer::PopulateGBuffers(const std::vector<std::unique_ptr<Entity
 		DirectX::XMStoreFloat4x4(&inverse_transpose_world_matrix, temp_inverse_transpose_world_matrix);
 		mup_deferred_buffer_vertex_shader->SetConstantBufferMatrix4x4("inverse_transpose_world_matrix", entity->transform.GetWorldMatrix());
 		*/
-		mup_deferred_buffer_vertex_shader->SetConstantBufferMatrix4x4("world_matrix", transform_component.GetWorldMatrix());
-		DirectX::XMMATRIX temp_entity_world_matrix = DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&transform_component.GetWorldMatrix()));
+		mup_deferred_buffer_vertex_shader->SetConstantBufferMatrix4x4("world_matrix", transform_component.m_world_matrix);
+		DirectX::XMMATRIX temp_entity_world_matrix = DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&transform_component.m_world_matrix));
 		DirectX::XMMATRIX temp_world_view_projection_matrix = temp_entity_world_matrix * temp_camera_view_matrix * temp_camera_projection_matrix;
 		DirectX::XMFLOAT4X4 world_view_projection_matrix;
 		DirectX::XMStoreFloat4x4(&world_view_projection_matrix, XMMatrixTranspose(temp_world_view_projection_matrix));
@@ -206,7 +206,7 @@ void SendLightToShader(PixelShader* pixelShader, const Entity& pLight)
 		DirLightExport dirLightExport;
 		dirLightExport.ambientColor = directionalLight->ambientColor;
 		dirLightExport.diffuseColor = directionalLight->diffuseColor;
-		dirLightExport.direction = pLight.GetTransformComponent().rotation;
+		dirLightExport.direction = pLight.GetTransformComponent().m_rotation;
 
 		pixelShader->SetConstantBufferVariable("dL1", &dirLightExport, sizeof(DirLightExport));
 	}
@@ -235,7 +235,7 @@ void DeferredRenderer::CompositeShading(const Entity & pCamera, const Entity & p
 	CameraComponent* camera_component = pCamera.GetComponentByType<CameraComponent>();
 	mup_deferred_composite_pixel_shader->SetConstantBufferMatrix4x4("inverse_view_matrix", camera_component->m_inverse_view);	// pre-multiply perspective divide
 	mup_deferred_composite_pixel_shader->SetConstantBufferMatrix4x4("inverse_projection_matrix", camera_component->m_inverse_projection_matrix);
-	mup_deferred_composite_pixel_shader->SetConstantBufferFloat3("camera_position_world_space", pCamera.GetTransformComponent().position);
+	mup_deferred_composite_pixel_shader->SetConstantBufferFloat3("camera_position_world_space", pCamera.GetTransformComponent().m_position);
 	mup_deferred_composite_pixel_shader->SetConstantBufferFloat("camera_projection_a", camera_component->m_projection_a);
 	mup_deferred_composite_pixel_shader->SetConstantBufferFloat("camera_projection_b", camera_component->m_projection_b);
 	// IBL

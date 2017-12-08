@@ -67,21 +67,15 @@ void ParticleManager::Render(const CameraComponent& pr_camera, const std::vector
 
 	mp_context->OMSetRenderTargets(1, &pp_rtv, pp_dsv);
 
-
-	XMMATRIX temp_view_matrix = XMMatrixTranspose(XMLoadFloat4x4(&pr_camera.m_view_matrix));
-	XMMATRIX temp_projection_matrix = XMMatrixTranspose(XMLoadFloat4x4(&pr_camera.m_projection_matrix));
+	mup_particle_vertex_shader->SetConstantBufferMatrix4x4("view_matrix", pr_camera.m_view_matrix);
+	mup_particle_vertex_shader->SetConstantBufferMatrix4x4("projection_matrix", pr_camera.m_projection_matrix);
+	mup_particle_vertex_shader->UpdateAllConstantBuffers();
 
 	for (Entity* entity : pp_entities)
 	{
 		if (!(entity->HasComponent<ParticleEmitterComponent>())) { continue; }
 		ParticleEmitterComponent& emitter = *entity->GetComponentByType<ParticleEmitterComponent>();
-
-		XMMATRIX temp_world_matrix = XMMatrixTranspose(XMLoadFloat4x4(&(entity->GetTransformComponent().GetWorldMatrix())));
-		XMMATRIX temp_world_view_projection_matrix = temp_world_matrix * temp_view_matrix * temp_projection_matrix;
-		XMFLOAT4X4 world_view_projection_matrix;
-		XMStoreFloat4x4(&world_view_projection_matrix, XMMatrixTranspose(temp_world_view_projection_matrix));
-		mup_particle_vertex_shader->SetConstantBufferMatrix4x4("world_view_projection_matrix", world_view_projection_matrix);
-		mup_particle_vertex_shader->UpdateAllConstantBuffers();
+		if (emitter.m_particles.size() <= 0) { continue; }
 
 		unsigned int stride = sizeof(ParticleVertex);
 		unsigned int offset = 0;
@@ -135,10 +129,10 @@ void ParticleManager::EmitParticles(std::vector<Entity*>& pr_entities, float p_d
 					// Add particle
 					emitter.m_particles.emplace_back();
 
-					// Variate position
-					emitter.m_particles.back().m_position.x = emitter.m_position_x_distribution(rng);
-					emitter.m_particles.back().m_position.y = emitter.m_position_y_distribution(rng);
-					emitter.m_particles.back().m_position.z = emitter.m_position_z_distribution(rng);
+					// Variate spawn position
+					emitter.m_particles.back().m_translation.x = emitter.m_position_x_distribution(rng);
+					emitter.m_particles.back().m_translation.y = emitter.m_position_y_distribution(rng);
+					emitter.m_particles.back().m_translation.z = emitter.m_position_z_distribution(rng);
 
 					// Variate color
 					emitter.m_particles.back().m_color.x = emitter.m_color_distribution(rng);
@@ -172,10 +166,10 @@ void ParticleManager::UpdateParticles(std::vector<Entity*>& pr_entities, float p
 			// Update age
 			emitter.m_particles[i].m_age += p_delta_time;
 
-			// Update position
-			emitter.m_particles[i].m_position.x += emitter.m_particles[i].m_velocity.x * p_delta_time;
-			emitter.m_particles[i].m_position.y += emitter.m_particles[i].m_velocity.y * p_delta_time;
-			emitter.m_particles[i].m_position.z += emitter.m_particles[i].m_velocity.z * p_delta_time;
+			// Update translation
+			emitter.m_particles[i].m_translation.x += emitter.m_particles[i].m_velocity.x * p_delta_time;
+			emitter.m_particles[i].m_translation.y += emitter.m_particles[i].m_velocity.y * p_delta_time;
+			emitter.m_particles[i].m_translation.z += emitter.m_particles[i].m_velocity.z * p_delta_time;
 		}
 	}
 }
@@ -196,36 +190,43 @@ void ParticleManager::UpdateBuffers(std::vector<Entity*>& pr_entities)
 		for (int particle_i = 0; particle_i < emitter.m_particles.size(); particle_i++)
 		{
 			// Bottom Left
-			emitter.m_vertices[vertex_i].m_position.x = emitter.m_particles[particle_i].m_position.x - emitter.m_particle_size;
-			emitter.m_vertices[vertex_i].m_position.y = emitter.m_particles[particle_i].m_position.y - emitter.m_particle_size;
-			emitter.m_vertices[vertex_i].m_position.z = emitter.m_particles[particle_i].m_position.z;
-			emitter.m_vertices[vertex_i].m_position.w = emitter.m_particles[particle_i].m_position.w;
+			emitter.m_vertices[vertex_i].m_position.x = 0 - emitter.m_particle_size;
+			emitter.m_vertices[vertex_i].m_position.y = 0 - emitter.m_particle_size;
+			emitter.m_vertices[vertex_i].m_position.z = 0;
+			emitter.m_vertices[vertex_i].m_position.w = 1;
 			emitter.m_vertices[vertex_i].m_color = emitter.m_particles[particle_i].m_color;
+			XMMATRIX temp_translation_matrix = XMMatrixTranslationFromVector(XMLoadFloat3(&(emitter.m_particles[particle_i].m_translation)));
+			XMStoreFloat4x4(&(emitter.m_vertices[vertex_i].m_world_matrix), XMMatrixTranspose(temp_translation_matrix * XMMatrixTranspose(XMLoadFloat4x4(&(entity->GetTransformComponent().m_world_matrix)))));
 			vertex_i++;
 
 			// Top Left
-			emitter.m_vertices[vertex_i].m_position.x = emitter.m_particles[particle_i].m_position.x - emitter.m_particle_size;
-			emitter.m_vertices[vertex_i].m_position.y = emitter.m_particles[particle_i].m_position.y + emitter.m_particle_size;
-			emitter.m_vertices[vertex_i].m_position.z = emitter.m_particles[particle_i].m_position.z;
-			emitter.m_vertices[vertex_i].m_position.w = emitter.m_particles[particle_i].m_position.w;
+			emitter.m_vertices[vertex_i].m_position.x = 0 - emitter.m_particle_size;
+			emitter.m_vertices[vertex_i].m_position.y = 0 + emitter.m_particle_size;
+			emitter.m_vertices[vertex_i].m_position.z = 0;
+			emitter.m_vertices[vertex_i].m_position.w = 1;
 			emitter.m_vertices[vertex_i].m_color = emitter.m_particles[particle_i].m_color;
+			temp_translation_matrix = XMMatrixTranslationFromVector(XMLoadFloat3(&(emitter.m_particles[particle_i].m_translation)));
+			XMStoreFloat4x4(&(emitter.m_vertices[vertex_i].m_world_matrix), XMMatrixTranspose(temp_translation_matrix * XMMatrixTranspose(XMLoadFloat4x4(&(entity->GetTransformComponent().m_world_matrix)))));
 			vertex_i++;
 
 			// Bottom Right
-			emitter.m_vertices[vertex_i].m_position.x = emitter.m_particles[particle_i].m_position.x + emitter.m_particle_size;
-			emitter.m_vertices[vertex_i].m_position.y = emitter.m_particles[particle_i].m_position.y - emitter.m_particle_size;
-			emitter.m_vertices[vertex_i].m_position.z = emitter.m_particles[particle_i].m_position.z;
-			emitter.m_vertices[vertex_i].m_position.w = emitter.m_particles[particle_i].m_position.w;
+			emitter.m_vertices[vertex_i].m_position.x = 0 + emitter.m_particle_size;
+			emitter.m_vertices[vertex_i].m_position.y = 0 - emitter.m_particle_size;
+			emitter.m_vertices[vertex_i].m_position.z = 0;
+			emitter.m_vertices[vertex_i].m_position.w = 1;
 			emitter.m_vertices[vertex_i].m_color = emitter.m_particles[particle_i].m_color;
+			temp_translation_matrix = XMMatrixTranslationFromVector(XMLoadFloat3(&(emitter.m_particles[particle_i].m_translation)));
+			XMStoreFloat4x4(&(emitter.m_vertices[vertex_i].m_world_matrix), XMMatrixTranspose(temp_translation_matrix * XMMatrixTranspose(XMLoadFloat4x4(&(entity->GetTransformComponent().m_world_matrix)))));
 			vertex_i++;
 
-
 			// Top Right
-			emitter.m_vertices[vertex_i].m_position.x = emitter.m_particles[particle_i].m_position.x + emitter.m_particle_size;
-			emitter.m_vertices[vertex_i].m_position.y = emitter.m_particles[particle_i].m_position.y + emitter.m_particle_size;
-			emitter.m_vertices[vertex_i].m_position.z = emitter.m_particles[particle_i].m_position.z;
-			emitter.m_vertices[vertex_i].m_position.w = emitter.m_particles[particle_i].m_position.w;
+			emitter.m_vertices[vertex_i].m_position.x = 0 + emitter.m_particle_size;
+			emitter.m_vertices[vertex_i].m_position.y = 0 + emitter.m_particle_size;
+			emitter.m_vertices[vertex_i].m_position.z = 0;
+			emitter.m_vertices[vertex_i].m_position.w = 1;
 			emitter.m_vertices[vertex_i].m_color = emitter.m_particles[particle_i].m_color;
+			temp_translation_matrix = XMMatrixTranslationFromVector(XMLoadFloat3(&(emitter.m_particles[particle_i].m_translation)));
+			XMStoreFloat4x4(&(emitter.m_vertices[vertex_i].m_world_matrix), XMMatrixTranspose(temp_translation_matrix * XMMatrixTranspose(XMLoadFloat4x4(&(entity->GetTransformComponent().m_world_matrix)))));
 			vertex_i++;
 		}
 
