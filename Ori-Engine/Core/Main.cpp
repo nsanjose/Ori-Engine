@@ -1,8 +1,6 @@
 #pragma once
 
-#if defined(DEBUG) || defined(_DEBUG)
-	#include "vld.h"
-#endif
+#include "vld.h"
 
 #include <Windows.h>
 

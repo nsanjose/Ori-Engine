@@ -38,6 +38,45 @@ ParticleEmitterComponent::ParticleEmitterComponent(TransformComponent& pr_transf
 
 	m_color_distribution(0, 1)
 {
+	// Single object vertex set for instancing
+	m_vertices.emplace_back(XMFLOAT4(0 - m_particle_size, 0 - m_particle_size, 0, 1));
+	m_vertices.emplace_back(XMFLOAT4(0 - m_particle_size, 0 + m_particle_size, 0, 1));
+	m_vertices.emplace_back(XMFLOAT4(0 + m_particle_size, 0 - m_particle_size, 0, 1));
+	m_vertices.emplace_back(XMFLOAT4(0 + m_particle_size, 0 + m_particle_size, 0, 1));
+	D3D11_BUFFER_DESC vertex_buffer_desc = {};
+	vertex_buffer_desc.Usage				= D3D11_USAGE_DYNAMIC;
+	vertex_buffer_desc.ByteWidth			= sizeof(ParticleVertex) * 4;
+	vertex_buffer_desc.BindFlags			= D3D11_BIND_VERTEX_BUFFER;
+	vertex_buffer_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
+	vertex_buffer_desc.MiscFlags			= 0;
+	vertex_buffer_desc.StructureByteStride	= 0;
+	D3D11_SUBRESOURCE_DATA vertices_data;
+	vertices_data.pSysMem					= &m_vertices[0];
+	vertices_data.SysMemPitch				= 0;
+	vertices_data.SysMemSlicePitch			= 0;
+	pp_device->CreateBuffer(&vertex_buffer_desc, &vertices_data, mcp_vertex_buffer.GetAddressOf());
+
+	// Single object index set for instancing
+	UINT* indices = new UINT[6];
+	indices[0] = 0;
+	indices[1] = 1;
+	indices[2] = 2;
+	indices[3] = 2;
+	indices[4] = 1;
+	indices[5] = 3;
+	D3D11_BUFFER_DESC index_buffer_desc = {};
+	index_buffer_desc.Usage					= D3D11_USAGE_DYNAMIC;
+	index_buffer_desc.ByteWidth				= sizeof(UINT) * 6;
+	index_buffer_desc.BindFlags				= D3D11_BIND_INDEX_BUFFER;
+	index_buffer_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
+	index_buffer_desc.MiscFlags				= 0;
+	index_buffer_desc.StructureByteStride	= 0;
+	D3D11_SUBRESOURCE_DATA indices_data;
+	indices_data.pSysMem					= indices;
+	indices_data.SysMemPitch				= 0;
+	indices_data.SysMemSlicePitch			= 0;
+	pp_device->CreateBuffer(&index_buffer_desc, &indices_data, mcp_index_buffer.GetAddressOf());
+	delete[] indices;
 }
 
 ParticleEmitterComponent::~ParticleEmitterComponent()

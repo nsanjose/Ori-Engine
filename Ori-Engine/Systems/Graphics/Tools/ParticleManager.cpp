@@ -77,11 +77,12 @@ void ParticleManager::Render(const CameraComponent& pr_camera, const std::vector
 		ParticleEmitterComponent& emitter = *entity->GetComponentByType<ParticleEmitterComponent>();
 		if (emitter.m_particles.size() <= 0) { continue; }
 
-		unsigned int stride = sizeof(ParticleVertex);
-		unsigned int offset = 0;
-		mp_context->IASetVertexBuffers(0, 1, emitter.mcp_vertex_buffer.GetAddressOf(), &stride, &offset);
-		mp_context->IASetIndexBuffer(emitter.mcp_index_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-		mp_context->DrawIndexed(emitter.m_particles.size() * 6, 0, 0);
+		ID3D11Buffer* vertex_and_instance_buffers[2] = { emitter.mcp_vertex_buffer.Get(), emitter.mcp_instance_buffer.Get() };
+		UINT strides[2] = { sizeof(ParticleVertex), sizeof(ParticleInstance) };
+		UINT offsets[2] = { 0, 0 };
+		mp_context->IASetVertexBuffers(0, 2, vertex_and_instance_buffers, strides, offsets);
+		mp_context->IASetIndexBuffer(emitter.mcp_index_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);\
+		mp_context->DrawIndexedInstanced(6, emitter.m_particles.size(), 0, 0, 0);
 	}
 }
 
@@ -101,7 +102,8 @@ void ParticleManager::KillParticles(std::vector<Entity*>& pr_entities, float p_d
 				emitter.m_particles.erase(emitter.m_particles.begin()) + i;
 
 				// remove vertices
-				emitter.m_vertices.erase(emitter.m_vertices.begin() + i, emitter.m_vertices.begin() + i + 4);
+				emitter.m_instances.erase(emitter.m_instances.begin() + i);
+				//emitter.m_vertices.erase(emitter.m_vertices.begin() + i, emitter.m_vertices.begin() + i + 4);
 			}
 		}
 	}
@@ -129,16 +131,25 @@ void ParticleManager::EmitParticles(std::vector<Entity*>& pr_entities, float p_d
 					// Add particle
 					emitter.m_particles.emplace_back();
 
+					// Initialize instance
+					emitter.m_instances.emplace_back();
+					XMStoreFloat4x4(&emitter.m_instances.back().m_world_matrix, XMLoadFloat4x4(&(entity->GetTransformComponent().m_world_matrix)));
+
 					// Variate spawn position
-					emitter.m_particles.back().m_translation.x = emitter.m_position_x_distribution(rng);
-					emitter.m_particles.back().m_translation.y = emitter.m_position_y_distribution(rng);
-					emitter.m_particles.back().m_translation.z = emitter.m_position_z_distribution(rng);
+					XMMATRIX spawn_offset = XMMatrixTranslationFromVector({
+						emitter.m_position_x_distribution(rng),
+						emitter.m_position_x_distribution(rng),
+						emitter.m_position_x_distribution(rng) });
+					XMStoreFloat4x4(&emitter.m_instances.back().m_world_matrix, XMLoadFloat4x4(&(entity->GetTransformComponent().m_world_matrix)));
+					//emitter.m_particles.back().m_translation.x = emitter.m_position_x_distribution(rng);
+					//emitter.m_particles.back().m_translation.y = emitter.m_position_y_distribution(rng);
+					//emitter.m_particles.back().m_translation.z = emitter.m_position_z_distribution(rng);
 
 					// Variate color
-					emitter.m_particles.back().m_color.x = emitter.m_color_distribution(rng);
-					emitter.m_particles.back().m_color.y = emitter.m_color_distribution(rng);
-					emitter.m_particles.back().m_color.z = emitter.m_color_distribution(rng);
-					emitter.m_particles.back().m_color.w = 1.0f;
+					emitter.m_instances.back().m_color.x = emitter.m_color_distribution(rng);
+					emitter.m_instances.back().m_color.y = emitter.m_color_distribution(rng);
+					emitter.m_instances.back().m_color.z = emitter.m_color_distribution(rng);
+					emitter.m_instances.back().m_color.w = 1.0f;
 
 					// Variate velocity
 					emitter.m_particles.back().m_velocity.x = emitter.m_particle_base_velocity_x + emitter.m_velocity_x_distribution(rng);
@@ -166,10 +177,12 @@ void ParticleManager::UpdateParticles(std::vector<Entity*>& pr_entities, float p
 			// Update age
 			emitter.m_particles[i].m_age += p_delta_time;
 
-			// Update translation
-			emitter.m_particles[i].m_translation.x += emitter.m_particles[i].m_velocity.x * p_delta_time;
-			emitter.m_particles[i].m_translation.y += emitter.m_particles[i].m_velocity.y * p_delta_time;
-			emitter.m_particles[i].m_translation.z += emitter.m_particles[i].m_velocity.z * p_delta_time;
+			// Update position
+			XMMATRIX translation_matrix = XMMatrixTranslationFromVector({
+				emitter.m_particles[i].m_velocity.x * p_delta_time,
+				emitter.m_particles[i].m_velocity.y * p_delta_time,
+				emitter.m_particles[i].m_velocity.z * p_delta_time} );
+			XMStoreFloat4x4(&emitter.m_instances[i].m_world_matrix, XMMatrixTranspose(translation_matrix * XMMatrixTranspose(XMLoadFloat4x4(&emitter.m_instances[i].m_world_matrix))));
 		}
 	}
 }
@@ -181,97 +194,20 @@ void ParticleManager::UpdateBuffers(std::vector<Entity*>& pr_entities)
 		if (!(entity->HasComponent<ParticleEmitterComponent>())) { continue; }
 		ParticleEmitterComponent& emitter = *entity->GetComponentByType<ParticleEmitterComponent>();
 
-		// Resize vertex vector if too large/small
-		while (emitter.m_vertices.size() > (emitter.m_particles.size() * 4)) { emitter.m_vertices.pop_back(); }
-		while (emitter.m_vertices.size() < (emitter.m_particles.size() * 4)) { emitter.m_vertices.emplace_back(); }
-		
-		// Update vertex vector
-		unsigned int vertex_i = 0;
-		for (int particle_i = 0; particle_i < emitter.m_particles.size(); particle_i++)
-		{
-			// Bottom Left
-			emitter.m_vertices[vertex_i].m_position.x = 0 - emitter.m_particle_size;
-			emitter.m_vertices[vertex_i].m_position.y = 0 - emitter.m_particle_size;
-			emitter.m_vertices[vertex_i].m_position.z = 0;
-			emitter.m_vertices[vertex_i].m_position.w = 1;
-			emitter.m_vertices[vertex_i].m_color = emitter.m_particles[particle_i].m_color;
-			XMMATRIX temp_translation_matrix = XMMatrixTranslationFromVector(XMLoadFloat3(&(emitter.m_particles[particle_i].m_translation)));
-			XMStoreFloat4x4(&(emitter.m_vertices[vertex_i].m_world_matrix), XMMatrixTranspose(temp_translation_matrix * XMMatrixTranspose(XMLoadFloat4x4(&(entity->GetTransformComponent().m_world_matrix)))));
-			vertex_i++;
-
-			// Top Left
-			emitter.m_vertices[vertex_i].m_position.x = 0 - emitter.m_particle_size;
-			emitter.m_vertices[vertex_i].m_position.y = 0 + emitter.m_particle_size;
-			emitter.m_vertices[vertex_i].m_position.z = 0;
-			emitter.m_vertices[vertex_i].m_position.w = 1;
-			emitter.m_vertices[vertex_i].m_color = emitter.m_particles[particle_i].m_color;
-			temp_translation_matrix = XMMatrixTranslationFromVector(XMLoadFloat3(&(emitter.m_particles[particle_i].m_translation)));
-			XMStoreFloat4x4(&(emitter.m_vertices[vertex_i].m_world_matrix), XMMatrixTranspose(temp_translation_matrix * XMMatrixTranspose(XMLoadFloat4x4(&(entity->GetTransformComponent().m_world_matrix)))));
-			vertex_i++;
-
-			// Bottom Right
-			emitter.m_vertices[vertex_i].m_position.x = 0 + emitter.m_particle_size;
-			emitter.m_vertices[vertex_i].m_position.y = 0 - emitter.m_particle_size;
-			emitter.m_vertices[vertex_i].m_position.z = 0;
-			emitter.m_vertices[vertex_i].m_position.w = 1;
-			emitter.m_vertices[vertex_i].m_color = emitter.m_particles[particle_i].m_color;
-			temp_translation_matrix = XMMatrixTranslationFromVector(XMLoadFloat3(&(emitter.m_particles[particle_i].m_translation)));
-			XMStoreFloat4x4(&(emitter.m_vertices[vertex_i].m_world_matrix), XMMatrixTranspose(temp_translation_matrix * XMMatrixTranspose(XMLoadFloat4x4(&(entity->GetTransformComponent().m_world_matrix)))));
-			vertex_i++;
-
-			// Top Right
-			emitter.m_vertices[vertex_i].m_position.x = 0 + emitter.m_particle_size;
-			emitter.m_vertices[vertex_i].m_position.y = 0 + emitter.m_particle_size;
-			emitter.m_vertices[vertex_i].m_position.z = 0;
-			emitter.m_vertices[vertex_i].m_position.w = 1;
-			emitter.m_vertices[vertex_i].m_color = emitter.m_particles[particle_i].m_color;
-			temp_translation_matrix = XMMatrixTranslationFromVector(XMLoadFloat3(&(emitter.m_particles[particle_i].m_translation)));
-			XMStoreFloat4x4(&(emitter.m_vertices[vertex_i].m_world_matrix), XMMatrixTranspose(temp_translation_matrix * XMMatrixTranspose(XMLoadFloat4x4(&(entity->GetTransformComponent().m_world_matrix)))));
-			vertex_i++;
-		}
-
-		// Create buffers
 		if (emitter.m_particles.size() > 0)
 		{
-			// Vertices
-			D3D11_BUFFER_DESC vertex_buffer_desc = {};
-			vertex_buffer_desc.Usage				= D3D11_USAGE_DYNAMIC;
-			vertex_buffer_desc.ByteWidth			= sizeof(ParticleVertex) * 4 * emitter.m_particles.size();
-			vertex_buffer_desc.BindFlags			= D3D11_BIND_VERTEX_BUFFER;
-			vertex_buffer_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
-			vertex_buffer_desc.MiscFlags			= 0;
-			vertex_buffer_desc.StructureByteStride	= 0;
-			D3D11_SUBRESOURCE_DATA vertices_data;
-			vertices_data.pSysMem = &(emitter.m_vertices[0]);
-			vertices_data.SysMemPitch = 0;
-			vertices_data.SysMemSlicePitch = 0;
-			mp_device->CreateBuffer(&vertex_buffer_desc, &vertices_data, emitter.mcp_vertex_buffer.ReleaseAndGetAddressOf());
-
-			// Indices
-			unsigned int* indices = new unsigned int[emitter.m_particles.size() * 6];
-			unsigned int index_i = 0;
-			for (unsigned int i = 0; i < emitter.m_particles.size(); i++)
-			{
-				indices[index_i++] = 0 + (i * 4);
-				indices[index_i++] = 1 + (i * 4);
-				indices[index_i++] = 2 + (i * 4);
-				indices[index_i++] = 2 + (i * 4);
-				indices[index_i++] = 1 + (i * 4);
-				indices[index_i++] = 3 + (i * 4);
-			}
-			D3D11_BUFFER_DESC index_buffer_desc = {};
-			index_buffer_desc.Usage					= D3D11_USAGE_DYNAMIC;
-			index_buffer_desc.ByteWidth				= sizeof(unsigned int) * 6 * emitter.m_particles.size();
-			index_buffer_desc.BindFlags				= D3D11_BIND_INDEX_BUFFER;
-			index_buffer_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
-			index_buffer_desc.MiscFlags				= 0;
-			index_buffer_desc.StructureByteStride	= 0;
-			D3D11_SUBRESOURCE_DATA indices_data;
-			indices_data.pSysMem			= indices;
-			indices_data.SysMemPitch		= 0;
-			indices_data.SysMemSlicePitch	= 0;
-			mp_device->CreateBuffer(&index_buffer_desc, &indices_data, emitter.mcp_index_buffer.ReleaseAndGetAddressOf());
-			delete[] indices;
+			D3D11_BUFFER_DESC instance_buffer_desc = {};
+			instance_buffer_desc.Usage					= D3D11_USAGE_DYNAMIC;
+			instance_buffer_desc.ByteWidth				= sizeof(ParticleInstance) * emitter.m_instances.size();
+			instance_buffer_desc.BindFlags				= D3D11_BIND_VERTEX_BUFFER;
+			instance_buffer_desc.CPUAccessFlags			= D3D11_CPU_ACCESS_WRITE;
+			instance_buffer_desc.MiscFlags				= 0;
+			instance_buffer_desc.StructureByteStride	= 0;
+			D3D11_SUBRESOURCE_DATA instance_data;
+			instance_data.pSysMem			= &(emitter.m_instances[0]);
+			instance_data.SysMemPitch		= 0;
+			instance_data.SysMemSlicePitch	= 0;
+			mp_device->CreateBuffer(&instance_buffer_desc, &instance_data, emitter.mcp_instance_buffer.ReleaseAndGetAddressOf());
 		}
 	}
 }

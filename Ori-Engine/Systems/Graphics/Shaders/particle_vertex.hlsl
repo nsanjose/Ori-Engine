@@ -12,10 +12,10 @@ cbuffer BufferParameters : register(b0)
 
 struct VsIn
 {
-	float4 position		: POSITION;
+	float4 position_os	: POSITION;
+	float4 color		: INSTANCE_COLOR;
+	matrix world_matrix	: INSTANCE_WORLD;
 	//float2 tex_coord	: TEXCOORD;
-	float4 color		: COLOR;
-	matrix world_matrix	: WORLD;
 };
 
 struct VsOut
@@ -30,11 +30,12 @@ VsOut main(VsIn input)
 	VsOut output;
 
 	matrix temp_world_view_matrix = mul(input.world_matrix, view_matrix);
-
 	Billboard_ApproximateSpherical(temp_world_view_matrix);
-	output.position = mul(input.position, mul(temp_world_view_matrix, projection_matrix));
+
+	output.position = mul(input.position_os, mul(temp_world_view_matrix, projection_matrix));
 
 	//output.tex_coord = input.tex_coord;
 	output.color = input.color;
+
 	return output;
 }

@@ -194,42 +194,52 @@ bool VertexShader::CreateDerivedShader(ID3DBlob* pp_shader_blob)
 		shader_reflection->GetInputParameterDesc(i, &input_parameter_desc);
 
 		// Fill out input element desc
-		D3D11_INPUT_ELEMENT_DESC elementDesc;
-		elementDesc.SemanticName = input_parameter_desc.SemanticName;
-		elementDesc.SemanticIndex = input_parameter_desc.SemanticIndex;
-		elementDesc.InputSlot = 0;
-		elementDesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-		elementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-		elementDesc.InstanceDataStepRate = 0;
+		D3D11_INPUT_ELEMENT_DESC element_desc;
+		element_desc.SemanticName			= input_parameter_desc.SemanticName;
+		element_desc.SemanticIndex			= input_parameter_desc.SemanticIndex;
+		element_desc.InputSlot				= 0;
+		element_desc.AlignedByteOffset		= D3D11_APPEND_ALIGNED_ELEMENT;
+		element_desc.InputSlotClass			= D3D11_INPUT_PER_VERTEX_DATA;
+		element_desc.InstanceDataStepRate	= 0;
+
+		// Use (vertex) buffer slot 1 for instance buffer elements
+		std::string instance_semantic_prefix = "INSTANCE_";
+		std::string input_semantic = input_parameter_desc.SemanticName;
+		if (input_semantic.compare(0, instance_semantic_prefix.size(), instance_semantic_prefix) == 0)
+		{
+			element_desc.InputSlot				= 1;
+			element_desc.InputSlotClass			= D3D11_INPUT_PER_INSTANCE_DATA;
+			element_desc.InstanceDataStepRate	= 1;
+		}
 
 		// Determine DXGI format
 		if (input_parameter_desc.Mask == 1)
 		{
-			if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) elementDesc.Format = DXGI_FORMAT_R32_UINT;
-			else if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) elementDesc.Format = DXGI_FORMAT_R32_SINT;
-			else if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) elementDesc.Format = DXGI_FORMAT_R32_FLOAT;
+			if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) element_desc.Format = DXGI_FORMAT_R32_UINT;
+			else if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) element_desc.Format = DXGI_FORMAT_R32_SINT;
+			else if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) element_desc.Format = DXGI_FORMAT_R32_FLOAT;
 		}
 		else if (input_parameter_desc.Mask <= 3)
 		{
-			if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) elementDesc.Format = DXGI_FORMAT_R32G32_UINT;
-			else if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) elementDesc.Format = DXGI_FORMAT_R32G32_SINT;
-			else if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) elementDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+			if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) element_desc.Format = DXGI_FORMAT_R32G32_UINT;
+			else if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) element_desc.Format = DXGI_FORMAT_R32G32_SINT;
+			else if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) element_desc.Format = DXGI_FORMAT_R32G32_FLOAT;
 		}
 		else if (input_parameter_desc.Mask <= 7)
 		{
-			if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) elementDesc.Format = DXGI_FORMAT_R32G32B32_UINT;
-			else if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) elementDesc.Format = DXGI_FORMAT_R32G32B32_SINT;
-			else if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) elementDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+			if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) element_desc.Format = DXGI_FORMAT_R32G32B32_UINT;
+			else if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) element_desc.Format = DXGI_FORMAT_R32G32B32_SINT;
+			else if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) element_desc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
 		}
 		else if (input_parameter_desc.Mask <= 15)
 		{
-			if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) elementDesc.Format = DXGI_FORMAT_R32G32B32A32_UINT;
-			else if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) elementDesc.Format = DXGI_FORMAT_R32G32B32A32_SINT;
-			else if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) elementDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+			if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) element_desc.Format = DXGI_FORMAT_R32G32B32A32_UINT;
+			else if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) element_desc.Format = DXGI_FORMAT_R32G32B32A32_SINT;
+			else if (input_parameter_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) element_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		}
 
 		// Save element desc
-		input_layout_desc.push_back(elementDesc);
+		input_layout_desc.push_back(element_desc);
 	}
 
 	// Try to create Input Layout

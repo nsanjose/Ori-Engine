@@ -13,18 +13,21 @@
 struct Particle
 {
 	DirectX::XMFLOAT4 m_position = { 0, 0, 0, 1 };
-	DirectX::XMFLOAT4 m_color;
 	DirectX::XMFLOAT3 m_velocity;
-	DirectX::XMFLOAT3 m_translation;
+	//DirectX::XMFLOAT3 m_translation;
 	float m_age;
 };
 
 struct ParticleVertex
 {
+	ParticleVertex(const DirectX::XMFLOAT4& p_position) { m_position = p_position; }
 	DirectX::XMFLOAT4 m_position;
 	//DirectX::XMFLOAT2 tex_coord;
+};
+
+struct ParticleInstance
+{
 	DirectX::XMFLOAT4 m_color;
-	//DirectX::XMFLOAT3 m_translation;
 	DirectX::XMFLOAT4X4 m_world_matrix;
 };
 
@@ -73,6 +76,7 @@ public:
 	// Buffer resources
 	std::vector<Particle> m_particles;
 	std::vector<ParticleVertex> m_vertices;
-	Microsoft::WRL::ComPtr<ID3D11Buffer> mcp_vertex_buffer, mcp_index_buffer;
+	std::vector<ParticleInstance> m_instances;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> mcp_vertex_buffer, mcp_index_buffer, mcp_instance_buffer;
 };
 
