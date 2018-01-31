@@ -196,18 +196,10 @@ void ParticleManager::UpdateBuffers(std::vector<Entity*>& pr_entities)
 
 		if (emitter.m_particles.size() > 0)
 		{
-			D3D11_BUFFER_DESC instance_buffer_desc = {};
-			instance_buffer_desc.Usage					= D3D11_USAGE_DYNAMIC;
-			instance_buffer_desc.ByteWidth				= sizeof(ParticleInstance) * emitter.m_instances.size();
-			instance_buffer_desc.BindFlags				= D3D11_BIND_VERTEX_BUFFER;
-			instance_buffer_desc.CPUAccessFlags			= D3D11_CPU_ACCESS_WRITE;
-			instance_buffer_desc.MiscFlags				= 0;
-			instance_buffer_desc.StructureByteStride	= 0;
-			D3D11_SUBRESOURCE_DATA instance_data;
-			instance_data.pSysMem			= &(emitter.m_instances[0]);
-			instance_data.SysMemPitch		= 0;
-			instance_data.SysMemSlicePitch	= 0;
-			mp_device->CreateBuffer(&instance_buffer_desc, &instance_data, emitter.mcp_instance_buffer.ReleaseAndGetAddressOf());
+			D3D11_MAPPED_SUBRESOURCE instance_data;
+			mp_context->Map(emitter.mcp_instance_buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, NULL, &instance_data);
+			memcpy(instance_data.pData, &emitter.m_instances[0], sizeof(ParticleInstance) * emitter.m_instances.size());
+			mp_context->Unmap(emitter.mcp_instance_buffer.Get(), 0);
 		}
 	}
 }

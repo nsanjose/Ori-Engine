@@ -10,7 +10,7 @@ ParticleEmitterComponent::ParticleEmitterComponent(TransformComponent& pr_transf
 	m_is_emitting				(true),
 	m_emissions_per_second		(50.0f),
 	m_max_particle_age			(10.0f),
-	m_max_particle_count		(1000),
+	m_max_particle_count		(500),
 	m_particle_size				(0.05f),
 
 	m_particle_position_x_variation_min	(-0.5f),
@@ -44,10 +44,10 @@ ParticleEmitterComponent::ParticleEmitterComponent(TransformComponent& pr_transf
 	m_vertices.emplace_back(XMFLOAT4(0 + m_particle_size, 0 - m_particle_size, 0, 1));
 	m_vertices.emplace_back(XMFLOAT4(0 + m_particle_size, 0 + m_particle_size, 0, 1));
 	D3D11_BUFFER_DESC vertex_buffer_desc = {};
-	vertex_buffer_desc.Usage				= D3D11_USAGE_DYNAMIC;
+	vertex_buffer_desc.Usage				= D3D11_USAGE_IMMUTABLE;
 	vertex_buffer_desc.ByteWidth			= sizeof(ParticleVertex) * 4;
 	vertex_buffer_desc.BindFlags			= D3D11_BIND_VERTEX_BUFFER;
-	vertex_buffer_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
+	vertex_buffer_desc.CPUAccessFlags		= 0;
 	vertex_buffer_desc.MiscFlags			= 0;
 	vertex_buffer_desc.StructureByteStride	= 0;
 	D3D11_SUBRESOURCE_DATA vertices_data;
@@ -65,10 +65,10 @@ ParticleEmitterComponent::ParticleEmitterComponent(TransformComponent& pr_transf
 	indices[4] = 1;
 	indices[5] = 3;
 	D3D11_BUFFER_DESC index_buffer_desc = {};
-	index_buffer_desc.Usage					= D3D11_USAGE_DYNAMIC;
+	index_buffer_desc.Usage					= D3D11_USAGE_IMMUTABLE;
 	index_buffer_desc.ByteWidth				= sizeof(UINT) * 6;
 	index_buffer_desc.BindFlags				= D3D11_BIND_INDEX_BUFFER;
-	index_buffer_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
+	index_buffer_desc.CPUAccessFlags		= 0;
 	index_buffer_desc.MiscFlags				= 0;
 	index_buffer_desc.StructureByteStride	= 0;
 	D3D11_SUBRESOURCE_DATA indices_data;
@@ -77,6 +77,16 @@ ParticleEmitterComponent::ParticleEmitterComponent(TransformComponent& pr_transf
 	indices_data.SysMemSlicePitch			= 0;
 	pp_device->CreateBuffer(&index_buffer_desc, &indices_data, mcp_index_buffer.GetAddressOf());
 	delete[] indices;
+
+	// Buffer for instances
+	D3D11_BUFFER_DESC instance_buffer_desc = {};
+	instance_buffer_desc.Usage				= D3D11_USAGE_DYNAMIC;
+	instance_buffer_desc.ByteWidth			= sizeof(ParticleInstance) * m_max_particle_count;
+	instance_buffer_desc.BindFlags			= D3D11_BIND_VERTEX_BUFFER;
+	instance_buffer_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
+	instance_buffer_desc.MiscFlags			= 0;
+	instance_buffer_desc.StructureByteStride = 0;
+	pp_device->CreateBuffer(&instance_buffer_desc, NULL, mcp_instance_buffer.GetAddressOf());
 }
 
 ParticleEmitterComponent::~ParticleEmitterComponent()
