@@ -304,7 +304,7 @@ void PostProcessor::Bloom(ID3D11ShaderResourceView* source_srv)
 		mp_context->RSSetViewports(1, &vp);
 
 		// Horizontal blur
-		InitializeBlurDistributionForShader(m_blur_sample_offsets, m_blur_sample_weights, DirectX::XMFLOAT2(1, 0), m_frame_buffer_desc.Width, m_frame_buffer_desc.Height);
+		InitializeBlurDistributionForShader(m_blur_sample_offsets, m_blur_sample_weights, DirectX::XMFLOAT2(1, 0), m_downsample_descs[downsample_i].Width, m_downsample_descs[downsample_i].Height);
 		mup_blur_pixel_shader->SetConstantBufferVariable("sample_offsets_and_weights", &m_blur_sample_offsets_and_weights[0], sizeof(m_blur_sample_offsets_and_weights));
 		mup_blur_pixel_shader->UpdateAllConstantBuffers();
 		mup_blur_pixel_shader->SetShaderResourceView("source_texture", mcp_bloom_vertical_blur_downsample_srvs[downsample_i].Get());
@@ -315,7 +315,7 @@ void PostProcessor::Bloom(ID3D11ShaderResourceView* source_srv)
 		mp_context->OMSetRenderTargets(0, 0, 0);
 
 		// Vertical blur
-		InitializeBlurDistributionForShader(m_blur_sample_offsets, m_blur_sample_weights, DirectX::XMFLOAT2(0, 1), m_frame_buffer_desc.Width, m_frame_buffer_desc.Height);
+		InitializeBlurDistributionForShader(m_blur_sample_offsets, m_blur_sample_weights, DirectX::XMFLOAT2(0, 1), m_downsample_descs[downsample_i].Width, m_downsample_descs[downsample_i].Height);
 		mup_blur_pixel_shader->SetConstantBufferVariable("sample_offsets_and_weights", &m_blur_sample_offsets_and_weights[0], sizeof(m_blur_sample_offsets_and_weights));
 		mup_blur_pixel_shader->UpdateAllConstantBuffers();
 		mup_blur_pixel_shader->SetShaderResourceView("source_texture", mcp_bloom_horizontal_blur_downsample_srvs[downsample_i].Get());
