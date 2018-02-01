@@ -12,7 +12,7 @@
 #include "common_hdr.hlsl"
 
 SamplerState sampler_point								: register(s0);
-SamplerState sampler_linear								: register(s1);
+SamplerState sampler_bilinear							: register(s1);
 Texture2D source_texture								: register(t0);
 Texture2D<float1> adapted_luminance_texture_max_mip		: register(t1);
 Texture2D bloom_texture									: register(t2);
@@ -31,6 +31,6 @@ float4 main(QuadVsOut input) : SV_TARGET
 	//float3 tone_mapped_color		= ToneMap_Reinhard_Detail(exposed_color);
 	float3 tone_mapped_color		= ToneMap_Reinhard_BurnControl(exposed_color, 0.3f);
 	//float3 tone_mapped_color		= ToneMap_Filmic_Uncharted2(exposed_color);
-	float3 bloom					= bloom_texture.Sample(sampler_linear, input.tex_coord).rgb;
+	float3 bloom					= bloom_texture.Sample(sampler_bilinear, input.tex_coord).rgb;
 	return float4(tone_mapped_color + bloom, 1);
 }

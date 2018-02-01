@@ -15,7 +15,7 @@ Texture2D source_texture		: register(t0);
 struct QuadVsOut
 {
 	float4 position		: SV_POSITION;
-	float2 tex_coord		: TEXCOORD;
+	float2 tex_coord	: TEXCOORD;
 };
 
 float4 main(QuadVsOut input) : SV_TARGET

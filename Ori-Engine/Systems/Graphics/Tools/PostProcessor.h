@@ -18,8 +18,8 @@ public:
 	const D3D11_TEXTURE2D_DESC* GetFrameBufferDesc() const;
 	ID3D11RenderTargetView* GetFrameBufferRtv() const;
 	ID3D11ShaderResourceView* GetFrameBufferSrv() const;
-	ID3D11RenderTargetView* GetFrameBuffer2Rtv() const;
-	ID3D11ShaderResourceView* GetFrameBuffer2Srv() const;
+	//ID3D11RenderTargetView* GetFrameBuffer2Rtv() const;
+	//ID3D11ShaderResourceView* GetFrameBuffer2Srv() const;
 
 	void InitializeFrameBuffers(float pWidth, float pHeight);
 
@@ -76,14 +76,13 @@ private:
 
 	// Samplers
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> mcp_sampler_point;
-	Microsoft::WRL::ComPtr<ID3D11SamplerState> mcp_sampler_linear;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> mcp_sampler_bilinear;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> mcp_sampler_trilinear;
 
 	// Frame Buffers Resources
 	D3D11_TEXTURE2D_DESC m_frame_buffer_desc;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> mcp_frame_buffer_rtv;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mcp_frame_buffer_srv;
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> mcp_frame_buffer2_rtv;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mcp_frame_buffer2_srv;
 
 	// Blur Resources
 	bool m_is_blur_initialized = false;
@@ -101,11 +100,13 @@ private:
 	std::unique_ptr<PixelShader> mup_bloom_combine_pixel_shader;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> mcp_bloom_extract_rtv;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mcp_bloom_extract_srv;
-	std::vector<D3D11_TEXTURE2D_DESC> m_bloom_blur_downsample_descs;	// move these to blur resources
-	std::vector<Microsoft::WRL::ComPtr<ID3D11RenderTargetView>> mcp_bloom_blur_downsample_temp_rtvs;
-	std::vector<Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> mcp_bloom_blur_downsample_temp_srvs;
-	std::vector<Microsoft::WRL::ComPtr<ID3D11RenderTargetView>> mcp_bloom_blur_downsample_rtvs;
-	std::vector<Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> mcp_bloom_blur_downsample_srvs;
+	static const int m_BLOOM_DOWNSAMPLE_COUNT = 4;
+	std::vector<D3D11_TEXTURE2D_DESC> m_downsample_descs;
+	std::vector<Microsoft::WRL::ComPtr<ID3D11RenderTargetView>> mcp_bloom_vertical_blur_downsample_rtvs;
+	std::vector<Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> mcp_bloom_vertical_blur_downsample_srvs;
+	std::vector<Microsoft::WRL::ComPtr<ID3D11RenderTargetView>> mcp_bloom_horizontal_blur_downsample_rtvs;
+	std::vector<Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> mcp_bloom_horizontal_blur_downsample_srvs;
+	Microsoft::WRL::ComPtr<ID3D11BlendState> mcp_bloom_combine_blend_state;
 
 	// Tone Map Resources
 	std::unique_ptr<PixelShader> mup_luminance_buffer_pixel_shader;

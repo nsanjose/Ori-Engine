@@ -3,14 +3,11 @@
 		Bloom
 		Combining
 
-	-	The third step in the bloom effect, combining blurred downsamples with sources.
-	-	When downsamples are used for blurring efficiency, each blurred downsample is combined with the next
-		bigger downsample before that downsample then blurred until the first downsample is blurred.
+	-	The third step in the bloom effect, upsampling to combine blurred downsamples with sources.
 	=====================================================================================================	*/
 
-SamplerState sampler_linear		: register(s0);
-Texture2D source_texture_one		: register(t0);
-Texture2D source_texture_two		: register(t1);
+SamplerState sampler_bilinear	: register(s0);
+Texture2D source_texture		: register(t0);
 
 struct QuadVsOut
 {
@@ -20,7 +17,5 @@ struct QuadVsOut
 
 float4 main(QuadVsOut input) : SV_TARGET
 {
-	float3 source_texture_one_color = source_texture_one.Sample(sampler_linear, input.tex_coord).rgb;
-	float3 source_texture_two_color = source_texture_two.Sample(sampler_linear, input.tex_coord).rgb;
-	return float4(source_texture_one_color + source_texture_two_color, 1);
+	return float4(source_texture.Sample(sampler_bilinear, input.tex_coord).rgb, 1);
 }
