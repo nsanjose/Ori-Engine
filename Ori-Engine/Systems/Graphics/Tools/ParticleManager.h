@@ -32,7 +32,7 @@ private:
 
 	// Resources
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mcp_depth_stencil_state;
-	Microsoft::WRL::ComPtr<ID3D11BlendState> mcp_blend_state;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> mcp_sampler_bilinear;
 
 	// Update loop
 	void KillParticles(std::vector<Entity*>& pr_entities, float p_delta_time);

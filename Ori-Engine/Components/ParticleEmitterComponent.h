@@ -15,14 +15,17 @@ struct Particle
 	DirectX::XMFLOAT4 m_position = { 0, 0, 0, 1 };
 	DirectX::XMFLOAT3 m_velocity;
 	//DirectX::XMFLOAT3 m_translation;
-	float m_age;
+	float m_age = .0f;
 };
 
 struct ParticleVertex
 {
-	ParticleVertex(const DirectX::XMFLOAT4& p_position) { m_position = p_position; }
+	ParticleVertex(const DirectX::XMFLOAT4& p_position, const DirectX::XMFLOAT2 p_tex_coord) { 
+		m_position = p_position;
+		m_tex_coord = p_tex_coord;
+	}
 	DirectX::XMFLOAT4 m_position;
-	//DirectX::XMFLOAT2 tex_coord;
+	DirectX::XMFLOAT2 m_tex_coord;
 };
 
 struct ParticleInstance
@@ -42,7 +45,11 @@ public:
 	float m_emissions_per_second;
 	unsigned int m_max_particle_count;
 	float m_max_particle_age;
-	float m_particle_size;
+	float m_particle_half_width;
+	float m_particle_half_height;
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mcp_particle_texture_srv;
+	Microsoft::WRL::ComPtr<ID3D11BlendState> mcp_particle_blend_state;
 
 	// Spawn variations
 	// Position variation
@@ -71,7 +78,9 @@ public:
 	std::uniform_real_distribution<float> m_velocity_z_distribution;
 
 	// Color variation
+	bool m_is_color_randomized;
 	std::uniform_real_distribution<float> m_color_distribution;
+	DirectX::XMFLOAT3 m_particle_color;
 
 	// Buffer resources
 	std::vector<Particle> m_particles;

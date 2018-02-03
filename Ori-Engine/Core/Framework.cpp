@@ -68,7 +68,7 @@ void Framework::Initialize()
 
 	Entity* emitter = new Entity(
 		std::make_unique<TransformComponent>(
-			XMFLOAT3(0, 2.2f, -2.2f))	// position
+			XMFLOAT3(0, 15.f, -2.2f))	// position
 	);
 	emitter->AddComponent(std::make_unique<ParticleEmitterComponent>(
 		emitter->GetTransformComponent(),

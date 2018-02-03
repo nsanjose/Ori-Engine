@@ -1,5 +1,7 @@
 #include "ParticleEmitterComponent.h"
 
+#include <WICTextureLoader.h>
+
 using namespace DirectX;
 using Microsoft::WRL::ComPtr;
 
@@ -8,17 +10,18 @@ ParticleEmitterComponent::ParticleEmitterComponent(TransformComponent& pr_transf
 
 	// Settings
 	m_is_emitting				(true),
-	m_emissions_per_second		(50.0f),
-	m_max_particle_age			(10.0f),
+	m_emissions_per_second		(200.f),
+	m_max_particle_age			(.75f),
 	m_max_particle_count		(500),
-	m_particle_size				(0.05f),
+	m_particle_half_width		(0.01f),
+	m_particle_half_height		(0.1f),
 
-	m_particle_position_x_variation_min	(-0.5f),
-	m_particle_position_x_variation_max (0.5f),
-	m_particle_position_y_variation_min (-0.5f),
-	m_particle_position_y_variation_max	(0.5f),
-	m_particle_position_z_variation_min	(-0.5f),
-	m_particle_position_z_variation_max	(0.5f),
+	m_particle_position_x_variation_min	(-10.f),
+	m_particle_position_x_variation_max (10.f),
+	m_particle_position_y_variation_min (0.f),
+	m_particle_position_y_variation_max	(0.f),
+	m_particle_position_z_variation_min	(-10.f),
+	m_particle_position_z_variation_max	(10.f),
 	m_position_x_distribution(m_particle_position_x_variation_min, m_particle_position_x_variation_max),
 	m_position_y_distribution(m_particle_position_y_variation_min, m_particle_position_y_variation_max),
 	m_position_z_distribution(m_particle_position_z_variation_min, m_particle_position_z_variation_max),
@@ -26,23 +29,48 @@ ParticleEmitterComponent::ParticleEmitterComponent(TransformComponent& pr_transf
 	m_particle_base_velocity_x	(0.0f),
 	m_particle_base_velocity_y	(0.0f),
 	m_particle_base_velocity_z	(0.0f),
-	m_particle_velocity_x_variation_min	(-0.2f),
-	m_particle_velocity_x_variation_max (0.2f),
-	m_particle_velocity_y_variation_min	(-0.2f),
-	m_particle_velocity_y_variation_max	(0.2f),
-	m_particle_velocity_z_variation_min	(-0.2f),
-	m_particle_velocity_z_variation_max	(0.2f),
+	m_particle_velocity_x_variation_min	(-1.f),
+	m_particle_velocity_x_variation_max (1.f),
+	m_particle_velocity_y_variation_min	(-15.f),
+	m_particle_velocity_y_variation_max	(-10.f),
+	m_particle_velocity_z_variation_min	(-1.f),
+	m_particle_velocity_z_variation_max	(1.f),
 	m_velocity_x_distribution(m_particle_velocity_x_variation_min, m_particle_velocity_x_variation_max),
 	m_velocity_y_distribution(m_particle_velocity_y_variation_min, m_particle_velocity_y_variation_max),
 	m_velocity_z_distribution(m_particle_velocity_z_variation_min, m_particle_velocity_z_variation_max),
 
-	m_color_distribution(0, 1)
+	m_is_color_randomized(false),
+	m_color_distribution(0, 1),
+	m_particle_color(1, 1, 1)
 {
+	CreateWICTextureFromFile(pp_device, L"Resources/Particles/Raindrop.png", 0, mcp_particle_texture_srv.GetAddressOf());
+
+	D3D11_BLEND_DESC blend_desc = {};
+	blend_desc.AlphaToCoverageEnable					= false;
+	blend_desc.IndependentBlendEnable					= false;
+	blend_desc.RenderTarget[0].BlendEnable				= true;
+	blend_desc.RenderTarget[0].BlendOp					= D3D11_BLEND_OP_ADD;
+	blend_desc.RenderTarget[0].BlendOpAlpha				= D3D11_BLEND_OP_ADD;
+	blend_desc.RenderTarget[0].DestBlend				= D3D11_BLEND_ONE;
+	blend_desc.RenderTarget[0].DestBlendAlpha			= D3D11_BLEND_ONE;
+	blend_desc.RenderTarget[0].RenderTargetWriteMask	= D3D11_COLOR_WRITE_ENABLE_ALL;
+	blend_desc.RenderTarget[0].SrcBlend					= D3D11_BLEND_SRC_ALPHA;
+	blend_desc.RenderTarget[0].SrcBlendAlpha			= D3D11_BLEND_ZERO;
+	pp_device->CreateBlendState(&blend_desc, mcp_particle_blend_state.GetAddressOf());
+	
 	// Single object vertex set for instancing
-	m_vertices.emplace_back(XMFLOAT4(0 - m_particle_size, 0 - m_particle_size, 0, 1));
-	m_vertices.emplace_back(XMFLOAT4(0 - m_particle_size, 0 + m_particle_size, 0, 1));
-	m_vertices.emplace_back(XMFLOAT4(0 + m_particle_size, 0 - m_particle_size, 0, 1));
-	m_vertices.emplace_back(XMFLOAT4(0 + m_particle_size, 0 + m_particle_size, 0, 1));
+	m_vertices.emplace_back(
+		XMFLOAT4(0 - m_particle_half_width, 0 - m_particle_half_height, 0, 1), 
+		XMFLOAT2(0, 0));
+	m_vertices.emplace_back(
+		XMFLOAT4(0 - m_particle_half_width, 0 + m_particle_half_height, 0, 1), 
+		XMFLOAT2(0, 1));
+	m_vertices.emplace_back(
+		XMFLOAT4(0 + m_particle_half_width, 0 - m_particle_half_height, 0, 1), 
+		XMFLOAT2(1, 0));
+	m_vertices.emplace_back(
+		XMFLOAT4(0 + m_particle_half_width, 0 + m_particle_half_height, 0, 1), 
+		XMFLOAT2(1, 1));
 	D3D11_BUFFER_DESC vertex_buffer_desc = {};
 	vertex_buffer_desc.Usage				= D3D11_USAGE_IMMUTABLE;
 	vertex_buffer_desc.ByteWidth			= sizeof(ParticleVertex) * 4;

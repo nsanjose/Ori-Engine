@@ -21,18 +21,13 @@ ParticleManager::ParticleManager(ID3D11Device * pp_device, ID3D11DeviceContext *
 	depth_stencil_desc.DepthFunc				= D3D11_COMPARISON_LESS;
 	mp_device->CreateDepthStencilState(&depth_stencil_desc, mcp_depth_stencil_state.GetAddressOf());
 
-	D3D11_BLEND_DESC blend_desc							= {};
-	blend_desc.AlphaToCoverageEnable					= false;
-	blend_desc.IndependentBlendEnable					= false;
-	blend_desc.RenderTarget[0].BlendEnable				= true;
-	blend_desc.RenderTarget[0].SrcBlend					= D3D11_BLEND_ONE;
-	blend_desc.RenderTarget[0].DestBlend				= D3D11_BLEND_ONE;
-	blend_desc.RenderTarget[0].BlendOp					= D3D11_BLEND_OP_ADD;
-	blend_desc.RenderTarget[0].SrcBlendAlpha			= D3D11_BLEND_ONE;
-	blend_desc.RenderTarget[0].DestBlendAlpha			= D3D11_BLEND_ONE;
-	blend_desc.RenderTarget[0].BlendOpAlpha				= D3D11_BLEND_OP_ADD;
-	blend_desc.RenderTarget[0].RenderTargetWriteMask	= D3D11_COLOR_WRITE_ENABLE_ALL;
-	mp_device->CreateBlendState(&blend_desc, mcp_blend_state.GetAddressOf());
+	D3D11_SAMPLER_DESC sampler_bilinear_desc = {};
+	ZeroMemory(&sampler_bilinear_desc, sizeof(D3D11_SAMPLER_DESC));
+	sampler_bilinear_desc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+	sampler_bilinear_desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+	sampler_bilinear_desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+	sampler_bilinear_desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	mp_device->CreateSamplerState(&sampler_bilinear_desc, mcp_sampler_bilinear.GetAddressOf());
 }
 
 ParticleManager::~ParticleManager()
@@ -77,12 +72,21 @@ void ParticleManager::Render(const CameraComponent& pr_camera, const std::vector
 		ParticleEmitterComponent& emitter = *entity->GetComponentByType<ParticleEmitterComponent>();
 		if (emitter.m_particles.size() <= 0) { continue; }
 
+		mup_particle_pixel_shader->SetSamplerState("sampler_bilinear", mcp_sampler_bilinear.Get());
+		mup_particle_pixel_shader->SetShaderResourceView("particle_texture", emitter.mcp_particle_texture_srv.Get());
+
 		ID3D11Buffer* vertex_and_instance_buffers[2] = { emitter.mcp_vertex_buffer.Get(), emitter.mcp_instance_buffer.Get() };
 		UINT strides[2] = { sizeof(ParticleVertex), sizeof(ParticleInstance) };
 		UINT offsets[2] = { 0, 0 };
 		mp_context->IASetVertexBuffers(0, 2, vertex_and_instance_buffers, strides, offsets);
-		mp_context->IASetIndexBuffer(emitter.mcp_index_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);\
+		mp_context->IASetIndexBuffer(emitter.mcp_index_buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+		mp_context->OMSetBlendState(emitter.mcp_particle_blend_state.Get(), 0, 0xffffffff);
 		mp_context->DrawIndexedInstanced(6, emitter.m_particles.size(), 0, 0, 0);
+
+		// Unbind
+		mup_particle_pixel_shader->SetSamplerState("sampler_bilinear", 0);
+		mup_particle_pixel_shader->SetShaderResourceView("particle_texture", 0);
+		mp_context->OMSetBlendState(0, 0, 0xffffffff);
 	}
 }
 
@@ -100,10 +104,7 @@ void ParticleManager::KillParticles(std::vector<Entity*>& pr_entities, float p_d
 			{
 				// remove particle
 				emitter.m_particles.erase(emitter.m_particles.begin()) + i;
-
-				// remove vertices
 				emitter.m_instances.erase(emitter.m_instances.begin() + i);
-				//emitter.m_vertices.erase(emitter.m_vertices.begin() + i, emitter.m_vertices.begin() + i + 4);
 			}
 		}
 	}
@@ -130,33 +131,37 @@ void ParticleManager::EmitParticles(std::vector<Entity*>& pr_entities, float p_d
 				{
 					// Add particle
 					emitter.m_particles.emplace_back();
-
-					// Initialize instance
 					emitter.m_instances.emplace_back();
-					XMStoreFloat4x4(&emitter.m_instances.back().m_world_matrix, XMLoadFloat4x4(&(entity->GetTransformComponent().m_world_matrix)));
 
 					// Variate spawn position
 					XMMATRIX spawn_offset = XMMatrixTranslationFromVector({
 						emitter.m_position_x_distribution(rng),
-						emitter.m_position_x_distribution(rng),
-						emitter.m_position_x_distribution(rng) });
-					XMStoreFloat4x4(&emitter.m_instances.back().m_world_matrix, XMLoadFloat4x4(&(entity->GetTransformComponent().m_world_matrix)));
-					//emitter.m_particles.back().m_translation.x = emitter.m_position_x_distribution(rng);
-					//emitter.m_particles.back().m_translation.y = emitter.m_position_y_distribution(rng);
-					//emitter.m_particles.back().m_translation.z = emitter.m_position_z_distribution(rng);
-
-					// Variate color
-					emitter.m_instances.back().m_color.x = emitter.m_color_distribution(rng);
-					emitter.m_instances.back().m_color.y = emitter.m_color_distribution(rng);
-					emitter.m_instances.back().m_color.z = emitter.m_color_distribution(rng);
-					emitter.m_instances.back().m_color.w = 1.0f;
+						emitter.m_position_y_distribution(rng),
+						emitter.m_position_z_distribution(rng) });
+					XMStoreFloat4x4(&emitter.m_instances.back().m_world_matrix, XMMatrixTranspose(spawn_offset + XMMatrixTranspose(XMLoadFloat4x4(&entity->GetTransformComponent().m_world_matrix))));
 
 					// Variate velocity
 					emitter.m_particles.back().m_velocity.x = emitter.m_particle_base_velocity_x + emitter.m_velocity_x_distribution(rng);
 					emitter.m_particles.back().m_velocity.y = emitter.m_particle_base_velocity_y + emitter.m_velocity_y_distribution(rng);
 					emitter.m_particles.back().m_velocity.z = emitter.m_particle_base_velocity_z + emitter.m_velocity_z_distribution(rng);
 
-					emitter.m_particles.back().m_age = 0.0f;
+					if (emitter.m_is_color_randomized)
+					{
+						// Variate color
+						emitter.m_instances.back().m_color = {
+							emitter.m_color_distribution(rng),
+							emitter.m_color_distribution(rng),
+							emitter.m_color_distribution(rng),
+							1.0f };
+					}
+					else
+					{
+						emitter.m_instances.back().m_color = {
+							emitter.m_particle_color.x,
+							emitter.m_particle_color.y,
+							emitter.m_particle_color.z,
+							1.0f };
+					}
 				}
 
 				emitter.m_time_since_emission -= (1 / emitter.m_emissions_per_second);
