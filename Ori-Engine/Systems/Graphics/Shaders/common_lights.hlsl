@@ -3,48 +3,59 @@
 		Lights
 	=====================================================================================================	*/
 
-struct DirectionalLight	// color, direction
+interface AbstractLight
 {
-	float4 ambientColor;
-	float4 diffuseColor;
+	float3 GetColor();
+	float GetIrradiance(float3 surface_position_ws);
+	float3 GetDirectionToLight(float3 surface_position_ws);
+};
+
+class Light : AbstractLight
+{
+	float3 color;
+	float irradiance;
+
+	float3 GetColor() { return color; }
+	float GetIrradiance(float3 surface_position_ws) { return irradiance; }
+	float3 GetDirectionToLight(float3 surface_position_ws) { return 0; } // virtual
+};
+
+class Linked_DirectionalLight : Light
+{
 	float3 direction;
+
+	float3 GetDirectionToLight(float3 surface_position_ws) { return -direction; }
 };
 
-struct PointLight	// color, location, radius
-{
-	float4 ambientColor;
-	float4 diffuseColor;
-	float3 location;
-};
-
-struct SpotLight	// color, location, angle, direction
-{
-	float4 ambientColor;
-	float4 diffuseColor;
-	float3 location;
-	float angle;
-	float3 direction;
-};
-
+// use volume stenciling instead
 uint IsInSpotLight(float3 surface_direction_to_light, float3 light_direction, float light_angle)
 {
 	float angle_to_surface = acos(dot(-surface_direction_to_light, light_direction));	// acos on cpu?
 	return step(angle_to_surface, light_angle);
 }
 
-float PointLightFalloff_UE4(float3 lightPosition, float3 surfacePosition, float lightRadius)
+class Linked_SpotLight : Light
 {
-	float distance = length(lightPosition - surfacePosition);
-	return pow(saturate(1 - pow(distance / lightRadius, 4)), 2)
-		/ (pow(distance, 2) + 1);
+	float3 position_ws;
+	//float3 direction;
+	//float angle;
+
+	float3 GetDirectionToLight(float3 surface_position_ws) { return position_ws - surface_position_ws; }
+};
+
+float PointLightFalloff_UE4(float3 light_position, float light_radius, float3 surface_position)
+{
+	float distance = length(light_position - surface_position);
+	return pow(saturate(1 - pow(distance / light_radius, 4)), 2) / (pow(distance, 2) + 1);
 }
 
-float shadowCalc(Texture2D shadowMap, SamplerComparisonState shadowSampler, float4 shadowPos)
+class Linked_PointLight : Light
 {
-	// Convert NDC to UV coordinates (flip?)
-	float2 shadowUV = shadowPos.xy / shadowPos.w * 0.5f + 0.5f;
-	shadowUV.y = 1.0f - shadowUV.y;
-	float depthFromLight = shadowPos.z / shadowPos.w;
-	//depthFromLight -= .001f;
-	return shadowMap.SampleCmpLevelZero(shadowSampler, shadowUV, depthFromLight);
-}
+	float3 position_ws;
+	float radius;
+
+	float GetIrradiance(float3 surface_position_ws) { return irradiance * PointLightFalloff_UE4(position_ws, radius, surface_position_ws); }
+	float3 GetDirectionToLight(float3 surface_position_ws) { return position_ws - surface_position_ws; }
+};
+
+

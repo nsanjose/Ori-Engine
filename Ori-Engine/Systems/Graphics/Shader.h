@@ -17,9 +17,9 @@
 	=====================================================================================================	*/
 struct ConstantBufferVariableReflection
 {
+	unsigned int m_constant_buffer_index;
 	unsigned int m_byte_offset;
 	unsigned int m_size;
-	unsigned int m_constant_buffer_index;
 };
 
 struct ConstantBufferReflection
@@ -28,6 +28,7 @@ struct ConstantBufferReflection
 	unsigned char* m_temp_constant_buffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> mcp_constant_buffer;
 	unsigned int m_register_index;
+	D3D_CBUFFER_TYPE m_type;
 };
 
 struct ShaderResourceViewReflection
@@ -54,6 +55,7 @@ public:
 	void SetShader();
 	void UpdateAllConstantBuffers();
 
+	bool SetInterfaceToClass(LPCSTR p_interface_name, LPCSTR p_class_name);
 	bool SetConstantBufferVariable(std::string p_name, const void* pp_data, unsigned int p_byte_size);
 	bool SetConstantBufferInt(std::string p_name, int p_data)								{ return SetConstantBufferVariable(p_name, &p_data, sizeof(int)); }
 	bool SetConstantBufferFloat(std::string p_name, float p_data)							{ return SetConstantBufferVariable(p_name, &p_data, sizeof(float)); }
@@ -77,6 +79,7 @@ protected:
 	// Initialization
 	bool m_is_shader_initialized;
 	Microsoft::WRL::ComPtr<ID3DBlob> mcp_shader_blob;
+	Microsoft::WRL::ComPtr<ID3D11ShaderReflection> mcp_shader_reflection;
 
 	// Resources
 	std::vector<ConstantBufferReflection> m_constant_buffer_reflections;
@@ -85,11 +88,19 @@ protected:
 	std::unordered_map<std::string, ShaderResourceViewReflection> m_srv_reflections;
 
 	// Depends on derived shader type
-	virtual bool CreateDerivedShader(ID3DBlob* pp_shader_blob) = 0;
+	virtual bool CreateDerivedShader(ID3DBlob* pp_shader_blob, ID3D11ClassLinkage* pp_class_linkage) = 0;
 	virtual void SetDerivedShader() = 0;
 
 	// Used by setter to find appropriate memory destination
 	const ConstantBufferVariableReflection* FindConstantBufferVariable(std::string p_name);
+
+	Microsoft::WRL::ComPtr<ID3D11ClassLinkage> mcp_class_linkage;
+	UINT m_num_interfaces;
+	ID3D11ClassInstance** mp_interface_targets;
+	std::unordered_map<std::string, ID3D11ClassInstance*> mp_class_instances;
+
+	void RecursiveLayoutReflectionVariableMembers(UINT p_cbuffer_i, std::vector<std::string*>& p_name_hierarchy, UINT p_offset_hierarchy, ID3D11ShaderReflectionType* pp_var_type);
+	UINT GetSizeOfShaderVariableType(ID3D11ShaderReflectionType* pp_var_type);
 };
 
 /*	=====================================================================================================
@@ -107,7 +118,7 @@ public:
 protected:
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> mcp_input_layout;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> mcp_shader;
-	bool CreateDerivedShader(ID3DBlob* pp_shader_blob);
+	bool CreateDerivedShader(ID3DBlob* pp_shader_blob, ID3D11ClassLinkage* pp_class_linkage);
 	void SetDerivedShader();
 };
 
@@ -125,6 +136,6 @@ public:
 
 protected:
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> mcp_shader;
-	bool CreateDerivedShader(ID3DBlob* pp_shader_blob);
+	bool CreateDerivedShader(ID3DBlob* pp_shader_blob, ID3D11ClassLinkage* pp_class_linkage);
 	void SetDerivedShader();
 };

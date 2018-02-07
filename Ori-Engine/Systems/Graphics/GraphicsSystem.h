@@ -46,6 +46,7 @@ private:
 
 	// Resources
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> mcp_sampler_filtering_choice;
+	Microsoft::WRL::ComPtr<ID3D11Query> are_any_pixels_lit;
 
 	/*
 	// =====================================================================================================

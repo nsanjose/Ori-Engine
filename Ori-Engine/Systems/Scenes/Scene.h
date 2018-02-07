@@ -13,19 +13,19 @@ public:
 	~Scene();
 
 	void AddEntity(Entity* pEntity);
-	std::vector<std::unique_ptr<Entity>> & GetEntities();
-	//std::vector<std::unique_ptr<Entity>>& GetLightVector() const;
+	const std::vector<std::unique_ptr<Entity>>& GetEntities() const;
+	void AddLight(Entity* p_light);
+	const std::vector<std::unique_ptr<Entity>>& GetLights() const;
 	void SetCurrentCamera(Entity* pCamera);
 	Entity* GetCurrentCamera();
 	void SetCurrentSkyBox(SkyBox * pSkyBox);
 	SkyBox* GetCurrentSkyBox();
 
-	Entity* mSun;
+	bool is_post_processed = true;
 	
 private:
-
 	std::vector<std::unique_ptr<Entity>> mEntities;
-	//std::vector<std::unique_ptr<Entity>> mLightVector;
+	std::vector<std::unique_ptr<Entity>> m_lights;
 	Entity* mCurrentCamera;
 	SkyBox* mCurrentSkyBox;
 };

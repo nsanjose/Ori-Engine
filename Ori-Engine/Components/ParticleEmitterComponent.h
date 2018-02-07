@@ -14,7 +14,6 @@ struct Particle
 {
 	DirectX::XMFLOAT4 m_position = { 0, 0, 0, 1 };
 	DirectX::XMFLOAT3 m_velocity;
-	//DirectX::XMFLOAT3 m_translation;
 	float m_age = .0f;
 };
 

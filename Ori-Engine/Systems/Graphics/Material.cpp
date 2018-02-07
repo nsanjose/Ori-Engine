@@ -20,9 +20,19 @@ Material::Material(ComPtr<ID3D11Device> device, ComPtr<ID3D11DeviceContext> cont
 	CreateWICTextureFromFile(device.Get(), context.Get(), p_ambient_occlusion_filepath, 0, m_ambient_occlusion_map.GetAddressOf());
 }
 
+Material::Material(XMFLOAT3 p_base_color, float p_metalness, float p_roughness, float p_opacity)
+{
+	m_is_test_material = true;
+	m_base_color = p_base_color;
+	m_metalness = p_metalness;
+	m_roughness = p_roughness;
+	m_opacity = p_opacity;
+}
+
 Material::Material(float p_metalness, float p_roughness, float p_opacity)
 {
 	m_is_test_material = true;
+	m_base_color = { p_metalness, p_metalness, p_metalness };
 	m_metalness = p_metalness;
 	m_roughness = p_roughness;
 	m_opacity = p_opacity;
@@ -65,6 +75,11 @@ ID3D11ShaderResourceView* Material::GetOpacityMap()
 bool Material::IsTestMaterial()
 {
 	return m_is_test_material;
+}
+
+XMFLOAT3 Material::GetBaseColor()
+{
+	return m_base_color;
 }
 
 float Material::GetTestMetalness()

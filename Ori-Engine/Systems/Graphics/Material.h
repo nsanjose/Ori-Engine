@@ -11,6 +11,7 @@ public:
 	Material();
 	Material(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
 		const wchar_t* p_base_color_filepath, const wchar_t* p_metalness_filepath, const wchar_t* p_roughness_filepath, const wchar_t* p_normal_filepath, const wchar_t* p_ambient_occlusion_filepath);
+	Material(DirectX::XMFLOAT3 p_base_color, float p_metalness, float p_roughness, float p_opacity);
 	Material(float p_metalness, float p_roughness, float p_opacity);
 	~Material();
 	
@@ -24,6 +25,7 @@ public:
 	ID3D11ShaderResourceView* GetOpacityMap();
 
 	bool IsTestMaterial();
+	DirectX::XMFLOAT3 GetBaseColor();
 	float GetTestMetalness();
 	float GetTestRoughness();
 	float GetTestOpacity();
@@ -37,6 +39,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_opacity_map;
 
 	bool m_is_test_material = false;
+	DirectX::XMFLOAT3 m_base_color;
 	float m_metalness;
 	float m_roughness;
 	float m_opacity;

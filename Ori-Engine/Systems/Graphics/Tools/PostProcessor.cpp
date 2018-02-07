@@ -64,7 +64,6 @@ void PostProcessor::InitializeFrameBuffers(float pWidth, float pHeight)
 	m_frame_buffer_desc.CPUAccessFlags		= 0;
 	m_frame_buffer_desc.MiscFlags			= 0;
 	ID3D11Texture2D* frameBuffer1;
-	ID3D11Texture2D* frameBuffer2;
 	mp_device->CreateTexture2D(&m_frame_buffer_desc, nullptr, &frameBuffer1);
 
 	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};

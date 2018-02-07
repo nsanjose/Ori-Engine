@@ -18,8 +18,6 @@ public:
 	const D3D11_TEXTURE2D_DESC* GetFrameBufferDesc() const;
 	ID3D11RenderTargetView* GetFrameBufferRtv() const;
 	ID3D11ShaderResourceView* GetFrameBufferSrv() const;
-	//ID3D11RenderTargetView* GetFrameBuffer2Rtv() const;
-	//ID3D11ShaderResourceView* GetFrameBuffer2Srv() const;
 
 	void InitializeFrameBuffers(float pWidth, float pHeight);
 

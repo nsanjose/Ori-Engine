@@ -4,9 +4,9 @@ LightComponent::LightComponent() : Component()
 {
 }
 
-LightComponent::LightComponent(std::shared_ptr<Light> _light) : Component()
+LightComponent::LightComponent(std::unique_ptr<Light> p_light) : Component()
 {
-	light = _light;
+	light = std::move(p_light);
 }
 
 LightComponent::~LightComponent()
@@ -15,13 +15,4 @@ LightComponent::~LightComponent()
 
 Light* LightComponent::GetGenericLight() {
 	return light.get();
-}
-
-std::shared_ptr<Shadow>& LightComponent::GetShadow()
-{
-	if (!shadow)
-	{
-		shadow = std::make_shared<Shadow>();
-	}
-	return shadow;
 }

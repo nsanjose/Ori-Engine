@@ -12,11 +12,11 @@ ShadowRenderer::ShadowRenderer(ID3D11Device* pp_device, ID3D11DeviceContext* pp_
 
 	//m_SHADOW_MAP_SIZE = 1024;
 	D3D11_SAMPLER_DESC shadow_sampler_desc = {};
-	shadow_sampler_desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR; // Compare ansiotropic performance hit??
+	shadow_sampler_desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
 	shadow_sampler_desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
 	shadow_sampler_desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
 	shadow_sampler_desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
-	shadow_sampler_desc.ComparisonFunc = D3D11_COMPARISON_LESS;
+	shadow_sampler_desc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
 	mp_device->CreateSamplerState(&shadow_sampler_desc, mcp_shadow_sampler.GetAddressOf());
 	D3D11_RASTERIZER_DESC shadow_rasterizer_desc = {};
 	shadow_rasterizer_desc.FillMode = D3D11_FILL_SOLID;							// try setting depth bias and clamp to 0
@@ -37,7 +37,8 @@ void ShadowRenderer::EnableShadowing(Entity& pr_light)
 {
 	TransformComponent& transform_component = pr_light.GetTransformComponent();
 	LightComponent* light_component = pr_light.GetComponentByType<LightComponent>();
-	Shadow& shadow = *light_component->GetShadow().get();
+	light_component->mup_shadow = std::move(std::make_unique<Shadow>());
+	Shadow& shadow = *light_component->mup_shadow.get();
 
 	// View
 	XMMATRIX shadow_view_matrix = XMMatrixLookToLH(
@@ -64,7 +65,7 @@ void ShadowRenderer::EnableShadowing(Entity& pr_light)
 	shadow_texture_desc.ArraySize = 1;
 	shadow_texture_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 	shadow_texture_desc.CPUAccessFlags = 0;
-	shadow_texture_desc.Format = DXGI_FORMAT_R32_TYPELESS;
+	shadow_texture_desc.Format = DXGI_FORMAT_R16_TYPELESS;
 	shadow_texture_desc.MipLevels = 1;
 	shadow_texture_desc.MiscFlags = 0;
 	shadow_texture_desc.SampleDesc.Count = 1;
@@ -74,13 +75,13 @@ void ShadowRenderer::EnableShadowing(Entity& pr_light)
 	mp_device->CreateTexture2D(&shadow_texture_desc, 0, &shadow_texture);
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC shadow_dsv_desc = {};
-	shadow_dsv_desc.Format = DXGI_FORMAT_D32_FLOAT;
+	shadow_dsv_desc.Format = DXGI_FORMAT_D16_UNORM;
 	shadow_dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 	shadow_dsv_desc.Texture2D.MipSlice = 0;
 	mp_device->CreateDepthStencilView(shadow_texture, &shadow_dsv_desc, shadow.shadowDepthStencilView.GetAddressOf());
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC shadow_srv_desc = {};
-	shadow_srv_desc.Format = DXGI_FORMAT_R32_FLOAT;
+	shadow_srv_desc.Format = DXGI_FORMAT_R16_UNORM;
 	shadow_srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	shadow_srv_desc.Texture2D.MipLevels = 1;
 	shadow_srv_desc.Texture2D.MostDetailedMip = 0;
@@ -89,45 +90,59 @@ void ShadowRenderer::EnableShadowing(Entity& pr_light)
 	shadow_texture->Release();
 }
 
-void ShadowRenderer::EnableCascadedShadowing(Entity& pr_light)
+void ShadowRenderer::EnableCascadedShadowing(Entity& pr_light, UINT p_num_cascades)
 {
-	// check if already shadowing
-		// remove projection[0], repopulate
-
 	LightComponent* light_component = pr_light.GetComponentByType<LightComponent>();
-	//Shadow& shadow = *light_component->GetShadow();
-	//shadow = CascadedShadow(shadow);
-	//CascadedShadow& cascaded_shadow = static_cast<CascadedShadow&>(shadow);
-	std::shared_ptr<Shadow>& shadow = light_component->GetShadow();
-	shadow = std::make_shared<CascadedShadow>(*shadow.get());
+	if (light_component->mup_shadow.get() == NULL)
+	{
+		light_component->mup_shadow = std::move(std::make_unique<Shadow>());
+	}
+	std::unique_ptr<Shadow>& shadow = light_component->mup_shadow;
+	shadow = std::make_unique<CascadedShadow>(*light_component->mup_shadow.get());
 	CascadedShadow& cascaded_shadow = static_cast<CascadedShadow&>(*shadow.get());
+	cascaded_shadow.m_num_cascades = p_num_cascades;
 
 	D3D11_TEXTURE2D_DESC cascaded_shadow_texture_desc = {};
-	cascaded_shadow_texture_desc.Width = m_SHADOW_MAP_SIZE;
-	cascaded_shadow_texture_desc.Height = m_SHADOW_MAP_SIZE;
-	cascaded_shadow_texture_desc.ArraySize = m_NUM_CASCADES;
-	cascaded_shadow_texture_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-	cascaded_shadow_texture_desc.CPUAccessFlags = 0;
-	cascaded_shadow_texture_desc.Format = DXGI_FORMAT_R32_TYPELESS; // Change to lower precision (Linear:R8, Non:D16)?
-	cascaded_shadow_texture_desc.MipLevels = 1;
-	cascaded_shadow_texture_desc.MiscFlags = 0;
-	cascaded_shadow_texture_desc.SampleDesc.Count = 1;
+	cascaded_shadow_texture_desc.Width				= m_SHADOW_MAP_SIZE;
+	cascaded_shadow_texture_desc.Height				= m_SHADOW_MAP_SIZE;
+	cascaded_shadow_texture_desc.ArraySize			= cascaded_shadow.m_num_cascades;
+	cascaded_shadow_texture_desc.BindFlags			= D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	cascaded_shadow_texture_desc.CPUAccessFlags		= 0;
+	cascaded_shadow_texture_desc.Format				= DXGI_FORMAT_R16_TYPELESS;
+	cascaded_shadow_texture_desc.MipLevels			= 1;
+	cascaded_shadow_texture_desc.MiscFlags			= 0;
+	cascaded_shadow_texture_desc.SampleDesc.Count	= 1;
 	cascaded_shadow_texture_desc.SampleDesc.Quality = 0;
-	cascaded_shadow_texture_desc.Usage = D3D11_USAGE_DEFAULT;
-	mp_device->CreateTexture2D(&cascaded_shadow_texture_desc, 0, cascaded_shadow.mCascadeTexture.GetAddressOf());
+	cascaded_shadow_texture_desc.Usage				= D3D11_USAGE_DEFAULT;
+	mp_device->CreateTexture2D(&cascaded_shadow_texture_desc, 0, cascaded_shadow.mcp_cascade_texture.GetAddressOf());
 	D3D11_SHADER_RESOURCE_VIEW_DESC cascaded_shadow_srv_desc = {};
-	cascaded_shadow_srv_desc.Format = DXGI_FORMAT_R32_FLOAT;
-	cascaded_shadow_srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+	cascaded_shadow_srv_desc.Format							= DXGI_FORMAT_R16_UNORM;
+	cascaded_shadow_srv_desc.ViewDimension					= D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
 	cascaded_shadow_srv_desc.Texture2DArray.MostDetailedMip = 0;
-	cascaded_shadow_srv_desc.Texture2DArray.MipLevels = 1;
+	cascaded_shadow_srv_desc.Texture2DArray.MipLevels		= 1;
 	cascaded_shadow_srv_desc.Texture2DArray.FirstArraySlice = 0;
-	cascaded_shadow_srv_desc.Texture2DArray.ArraySize = 3;
-	mp_device->CreateShaderResourceView(cascaded_shadow.mCascadeTexture.Get(), &cascaded_shadow_srv_desc, cascaded_shadow.shadowShaderResourceView.GetAddressOf());
+	cascaded_shadow_srv_desc.Texture2DArray.ArraySize		= cascaded_shadow.m_num_cascades;
+	mp_device->CreateShaderResourceView(cascaded_shadow.mcp_cascade_texture.Get(), &cascaded_shadow_srv_desc, cascaded_shadow.shadowShaderResourceView.GetAddressOf());
+
+	for (UINT cascade_i = 0; cascade_i < cascaded_shadow.m_num_cascades; cascade_i++)
+	{
+		D3D11_DEPTH_STENCIL_VIEW_DESC cascade_dsv_desc = {};
+		cascade_dsv_desc.Format							= DXGI_FORMAT_D16_UNORM;
+		cascade_dsv_desc.ViewDimension					= D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+		cascade_dsv_desc.Flags							= 0;
+		cascade_dsv_desc.Texture2DArray.MipSlice		= 0;
+		cascade_dsv_desc.Texture2DArray.FirstArraySlice = cascade_i;
+		cascade_dsv_desc.Texture2DArray.ArraySize		= 1;
+
+		cascaded_shadow.mcp_cascade_dsvs.emplace_back();
+		mp_device->CreateDepthStencilView(cascaded_shadow.mcp_cascade_texture.Get(), &cascade_dsv_desc, cascaded_shadow.mcp_cascade_dsvs[cascade_i].GetAddressOf());
+	}
+	
 }
 
-Microsoft::WRL::ComPtr<ID3D11SamplerState>& ShadowRenderer::GetSampler() const
+const Microsoft::WRL::ComPtr<ID3D11SamplerState>& ShadowRenderer::GetSampler() const
 {
-	return const_cast<Microsoft::WRL::ComPtr<ID3D11SamplerState>&>(mcp_shadow_sampler);
+	return mcp_shadow_sampler;
 }
 
 /*
@@ -192,12 +207,9 @@ void ShadowRenderer::RenderShadowMap(Entity& reLight, std::vector<Entity&>& rvpe
 // =====================================================================================================
 void ShadowRenderer::CalculateCascadeProjections(Entity& pr_light, const Entity& pr_camera)
 {
-	CascadedShadow& cascaded_shadow = static_cast<CascadedShadow&>(*pr_light.GetComponentByType<LightComponent>()->GetShadow());
-	//CascadedShadow& cascaded_shadow = pr_light.GetComponentByType<LightComponent>().GetShadowByType<CascadedShadow>();
-	//XMFLOAT4X4(&cascadeProjections)[3] = cascaded_shadow.mCascadeProjections;
-	//float(&cascadePartitionDepths)[3] = cascaded_shadow.mCascadePartitionDepths;
+	CascadedShadow& cascaded_shadow = static_cast<CascadedShadow&>(*pr_light.GetComponentByType<LightComponent>()->mup_shadow.get());
 
-	float cascade_partitions[] = { 0.0f, 0.10f, 0.30f, 1.0f };		// percentage of camera frustrum z range
+	float cascade_partitions[] = { 0.0f, 0.10f, 0.30f, .5f, 1.0f };		// percentage of camera frustrum z range
 	CameraComponent* camera_component = pr_camera.GetComponentByType<CameraComponent>();
 	float camera_frustum_range = camera_component->GetFarClip() - camera_component->GetNearClip();
 
@@ -208,7 +220,7 @@ void ShadowRenderer::CalculateCascadeProjections(Entity& pr_light, const Entity&
 	float tan_half_camera_fov_y = tanf(camera_fov / 2.0f);
 	float tan_half_camera_fov_x = tanf((camera_fov * camera_aspect_ratio) / 2.0f);
 
-	for (int cascade_i = 0; cascade_i < m_NUM_CASCADES; cascade_i++)
+	for (int cascade_i = 0; cascade_i < cascaded_shadow.m_num_cascades; cascade_i++)
 	{
 		// -----------------------------------------------------------------------------------------------------
 		//		Assign this cascade to a partitioned interval of the camera's frustrum
@@ -260,7 +272,7 @@ void ShadowRenderer::CalculateCascadeProjections(Entity& pr_light, const Entity&
 		// -----------------------------------------------------------------------------------------------------
 		//		Create this cascade's orthographic projection
 		// -----------------------------------------------------------------------------------------------------
-		XMStoreFloat4x4(&cascaded_shadow.mCascadeProjections[cascade_i], XMMatrixTranspose(XMMatrixOrthographicOffCenterLH(
+		XMStoreFloat4x4(&cascaded_shadow.m_cascade_projections[cascade_i], XMMatrixTranspose(XMMatrixOrthographicOffCenterLH(
 			min_x,			// ViewLeft
 			max_x,			// ViewRight
 			min_y,			// ViewBottom
@@ -268,9 +280,9 @@ void ShadowRenderer::CalculateCascadeProjections(Entity& pr_light, const Entity&
 			min_z - 5,		// NearZ		// temporary fix to models not appearing in shadow map near transitions between cascades
 			max_z)));		// FarZ
 
-		if (cascade_i < m_NUM_CASCADES - 1)
+		if (cascade_i < cascaded_shadow.m_num_cascades - 1)
 		{
-			cascaded_shadow.mCascadePartitionDepths[cascade_i] = cascade_partition_far;
+			cascaded_shadow.m_cascade_far_clips[cascade_i] = cascade_partition_far;
 		}
 	}
 }
@@ -297,30 +309,18 @@ void ShadowRenderer::RenderCascadeShadowMap(const std::vector<std::unique_ptr<En
 	mp_context->RSSetViewports(1, &vp);
 	mp_context->RSSetState(mcp_shadow_rasterizer.Get());
 
-	CascadedShadow& cascaded_shadow = static_cast<CascadedShadow&>(*pr_light.GetComponentByType<LightComponent>()->GetShadow());//pr_light.GetComponentByType<LightComponent>().GetShadowByType<CascadedShadow>();
+	CascadedShadow& cascaded_shadow = static_cast<CascadedShadow&>(*pr_light.GetComponentByType<LightComponent>()->mup_shadow.get());
 	XMMATRIX shadow_view_matrix = XMMatrixTranspose(XMLoadFloat4x4(&cascaded_shadow.shadowViewMatrix));
 
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 
-	for (int cascade_i = 0; cascade_i < m_NUM_CASCADES; cascade_i++)
+	for (int cascade_i = 0; cascade_i < cascaded_shadow.m_num_cascades; cascade_i++)
 	{
-		// Use a different DSV per cascade for T2DArray subresource target
-		// Using DSV as opposed to RTV for non-linear depth
-		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDescCSM = {};				// store in cascaded_shadow, access with []
-		dsvDescCSM.Format = DXGI_FORMAT_D32_FLOAT;				// lower res?
-		dsvDescCSM.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-		dsvDescCSM.Flags = 0;
-		dsvDescCSM.Texture2DArray.MipSlice = 0;
-		dsvDescCSM.Texture2DArray.FirstArraySlice = cascade_i;
-		dsvDescCSM.Texture2DArray.ArraySize = 1;
-		ComPtr<ID3D11DepthStencilView> dsvCSM;
-		mp_device->CreateDepthStencilView(cascaded_shadow.mCascadeTexture.Get(), &dsvDescCSM, dsvCSM.GetAddressOf());
+		mp_context->ClearDepthStencilView(cascaded_shadow.mcp_cascade_dsvs[cascade_i].Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+		mp_context->OMSetRenderTargets(0, 0, cascaded_shadow.mcp_cascade_dsvs[cascade_i].Get());
 
-		mp_context->ClearDepthStencilView(dsvCSM.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-		mp_context->OMSetRenderTargets(0, 0, dsvCSM.Get());
-
-		XMMATRIX shadow_cascade_projection_matrix = XMMatrixTranspose(XMLoadFloat4x4(&cascaded_shadow.mCascadeProjections[cascade_i]));
+		XMMATRIX shadow_cascade_projection_matrix = XMMatrixTranspose(XMLoadFloat4x4(&cascaded_shadow.m_cascade_projections[cascade_i]));
 
 		// optimize to only those with bounding box overlap projection frustum pulled back towards light source (infinite for sun)
 		for (int i = 0; i < pOpaqueEntities.size(); i++)

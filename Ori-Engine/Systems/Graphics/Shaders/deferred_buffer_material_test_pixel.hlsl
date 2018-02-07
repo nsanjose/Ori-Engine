@@ -7,6 +7,7 @@
 
 cbuffer BufferParameters : register(b0)
 {
+	float3 base_color;
 	float metalness;
 	float roughness;
 };
@@ -19,15 +20,15 @@ struct VsOut
 	float3 tangent		: TANGENT;
 };
 
-struct PsOut 
+struct PsOut
 {
-	float4 texture_one	: SV_TARGET0;
-	float4 texture_two	: SV_TARGET1;
+	float4 texture_one		: SV_TARGET0;
+	float4 texture_two		: SV_TARGET1;
+	float4 texture_three	: SV_TARGET2;
 };
 
 PsOut main(VsOut input)
 {
-	float3 base_color		= metalness;
 	float ambient_occlusion	= 1.0f;
 
 	float3 normal = float3(0.0f, 0.0f, 1.0f);
@@ -41,7 +42,8 @@ PsOut main(VsOut input)
 	float2 encoded_normal = EncodeNormal_StereographicProjection(input.normal);
 	
 	PsOut output;
-	output.texture_one = float4(base_color, ambient_occlusion);
+	output.texture_one = float4(base_color, 0);
 	output.texture_two = float4(encoded_normal, metalness, roughness);
+	output.texture_three = float4(0, 0, 0, ambient_occlusion);
 	return output;
 }

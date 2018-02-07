@@ -11,10 +11,10 @@
     <None Include="Systems\Graphics\Shaders\common_hdr.hlsl">
       <Filter>Systems\Graphics\Shaders</Filter>
     </None>
-    <None Include="Systems\Graphics\Shaders\common_lights.hlsl">
+    <None Include="Systems\Graphics\Shaders\common_particle.hlsl">
       <Filter>Systems\Graphics\Shaders</Filter>
     </None>
-    <None Include="Systems\Graphics\Shaders\common_particle.hlsl">
+    <None Include="Systems\Graphics\Shaders\common_lights.hlsl">
       <Filter>Systems\Graphics\Shaders</Filter>
     </None>
   </ItemGroup>
@@ -97,6 +97,15 @@
     <ClCompile Include="Components\ParticleEmitterComponent.cpp">
       <Filter>Components</Filter>
     </ClCompile>
+    <ClCompile Include="Systems\Scenes\DemoScenes\DemoScene.cpp">
+      <Filter>Systems\Scenes\DemoScenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Scenes\DemoScenes\DemoScene2.cpp">
+      <Filter>Systems\Scenes\DemoScenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\Scenes\DemoScenes\DemoScene3.cpp">
+      <Filter>Systems\Scenes\DemoScenes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Components\CameraComponent.h">
@@ -174,6 +183,15 @@
     <ClInclude Include="Components\ParticleEmitterComponent.h">
       <Filter>Components</Filter>
     </ClInclude>
+    <ClInclude Include="Systems\Scenes\DemoScenes\DemoScene.h">
+      <Filter>Systems\Scenes\DemoScenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Scenes\DemoScenes\DemoScene2.h">
+      <Filter>Systems\Scenes\DemoScenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Scenes\DemoScenes\DemoScene3.h">
+      <Filter>Systems\Scenes\DemoScenes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Components">
@@ -202,6 +220,9 @@
     </Filter>
     <Filter Include="Systems\Scenes">
       <UniqueIdentifier>{1c6085d1-760f-4f74-9978-813f07567293}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\Scenes\DemoScenes">
+      <UniqueIdentifier>{71ca18f6-e789-45dd-abd6-630aec48f187}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -257,6 +278,18 @@
       <Filter>Systems\Graphics\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Systems\Graphics\Shaders\particle_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\deferred_shadow_buffer_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\deferred_shadow_buffer_vertex.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\deferred_clear_gbuffer_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\deferred_apply_ibl_pixel.hlsl">
       <Filter>Systems\Graphics\Shaders</Filter>
     </FxCompile>
   </ItemGroup>

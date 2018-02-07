@@ -16,10 +16,10 @@ public:
 	ShadowRenderer(ID3D11Device* pp_device, ID3D11DeviceContext* pp_context);
 	~ShadowRenderer();
 
-	Microsoft::WRL::ComPtr<ID3D11SamplerState>& GetSampler() const;
+	const Microsoft::WRL::ComPtr<ID3D11SamplerState>& GetSampler() const;
 
 	void EnableShadowing(Entity& pLight);
-	void EnableCascadedShadowing(Entity& pLight);
+	void EnableCascadedShadowing(Entity& pLight, UINT p_num_cascades);
 
 	void CalculateCascadeProjections(Entity& pLightEntity, const Entity& pCameraEntity);
 	void RenderCascadeShadowMap(const std::vector<std::unique_ptr<Entity>>& pup_draw_entities, Entity& pLightEntity, const Entity& pCameraEntity);
@@ -36,6 +36,5 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> mcp_shadow_sampler;
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> mcp_shadow_rasterizer;
 	const float m_SHADOW_MAP_SIZE = 1024;
-	const int m_NUM_CASCADES = 3;
 };
 

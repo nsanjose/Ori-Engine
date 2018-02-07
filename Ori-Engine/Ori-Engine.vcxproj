@@ -156,6 +156,9 @@
     <ClCompile Include="Systems\Graphics\Tools\ShadowRenderer.cpp" />
     <ClCompile Include="Systems\Graphics\Tools\SkyBoxRenderer.cpp" />
     <ClCompile Include="Systems\Input\InputSystem.cpp" />
+    <ClCompile Include="Systems\Scenes\DemoScenes\DemoScene.cpp" />
+    <ClCompile Include="Systems\Scenes\DemoScenes\DemoScene2.cpp" />
+    <ClCompile Include="Systems\Scenes\DemoScenes\DemoScene3.cpp" />
     <ClCompile Include="Systems\Scenes\Entity.cpp" />
     <ClCompile Include="Systems\Scenes\Scene.cpp" />
     <ClCompile Include="Systems\Scenes\SceneSystem.cpp" />
@@ -183,6 +186,9 @@
     <ClInclude Include="Systems\Graphics\Tools\ShadowRenderer.h" />
     <ClInclude Include="Systems\Graphics\Tools\SkyBoxRenderer.h" />
     <ClInclude Include="Systems\Input\InputSystem.h" />
+    <ClInclude Include="Systems\Scenes\DemoScenes\DemoScene.h" />
+    <ClInclude Include="Systems\Scenes\DemoScenes\DemoScene2.h" />
+    <ClInclude Include="Systems\Scenes\DemoScenes\DemoScene3.h" />
     <ClInclude Include="Systems\Scenes\Entity.h" />
     <ClInclude Include="Systems\Scenes\Scene.h" />
     <ClInclude Include="Systems\Scenes\SceneSystem.h" />
@@ -205,15 +211,20 @@
     <None Include="Systems\Graphics\Shaders\common_hdr.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Systems\Graphics\Shaders\common_lights.hlsl">
-      <FileType>Document</FileType>
-    </None>
     <None Include="Systems\Graphics\Shaders\common_pbr.hlsl">
       <FileType>Document</FileType>
     </None>
     <None Include="Systems\Graphics\Shaders\common_particle.hlsl">
       <FileType>Document</FileType>
     </None>
+    <None Include="Systems\Graphics\Shaders\common_lights.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <FxCompile Include="Systems\Graphics\Shaders\deferred_apply_ibl_pixel.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.1</ShaderModel>
+    </FxCompile>
     <FxCompile Include="Systems\Graphics\Shaders\deferred_buffer_material_test_pixel.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -229,9 +240,25 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.1</ShaderModel>
     </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\deferred_clear_gbuffer_pixel.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.1</ShaderModel>
+    </FxCompile>
     <FxCompile Include="Systems\Graphics\Shaders\deferred_composite_pixel.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\deferred_shadow_buffer_pixel.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.1</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\deferred_shadow_buffer_vertex.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.1</ShaderModel>
     </FxCompile>
     <FxCompile Include="Systems\Graphics\Shaders\particle_pixel.hlsl">

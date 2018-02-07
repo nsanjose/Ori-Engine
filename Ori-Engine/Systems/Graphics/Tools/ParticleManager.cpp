@@ -34,7 +34,7 @@ ParticleManager::~ParticleManager()
 {
 }
 
-std::vector<Entity*> ParticleManager::CollectEntitiesWithEmitters(std::vector<std::unique_ptr<Entity>>& pup_entities)
+std::vector<Entity*> ParticleManager::CollectEntitiesWithEmitters(const std::vector<std::unique_ptr<Entity>>& pup_entities)
 {
 	std::vector<Entity*> emitter_entities;
 	for (int i = 0; i < pup_entities.size(); i++)

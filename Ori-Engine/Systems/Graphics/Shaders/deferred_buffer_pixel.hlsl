@@ -20,9 +20,11 @@ struct VsOut
 	float3 tangent		: TANGENT;
 };
 
-struct PsOut {
-	float4 texture_one	: SV_TARGET0;
-	float4 texture_two	: SV_TARGET1;
+struct PsOut 
+{
+	float4 texture_one		: SV_TARGET0;
+	float4 texture_two		: SV_TARGET1;
+	float4 texture_three	: SV_TARGET2;
 };
 
 PsOut main(VsOut input)
@@ -44,7 +46,8 @@ PsOut main(VsOut input)
 	float ambient_occlusion	= ambient_occlusion_map.Sample(sampler_filtering_choice, input.tex_coord).r;
 
 	PsOut output;
-	output.texture_one = float4(base_color, ambient_occlusion);
-	output.texture_two = float4(encoded_normal, metalness, roughness);
+	output.texture_one		= float4(base_color, 0);
+	output.texture_two		= float4(encoded_normal, metalness, roughness);
+	output.texture_three	= float4(0, 0, 0, ambient_occlusion);
 	return output;
 }

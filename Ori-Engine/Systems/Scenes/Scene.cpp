@@ -8,7 +8,6 @@ Scene::~Scene()
 {
 	delete mCurrentCamera;
 	delete mCurrentSkyBox;
-	delete mSun;
 }
 
 void Scene::AddEntity(Entity* pEntity)
@@ -16,9 +15,19 @@ void Scene::AddEntity(Entity* pEntity)
 	mEntities.push_back(std::move(std::unique_ptr<Entity>(pEntity)));
 }
 
-std::vector<std::unique_ptr<Entity>>& Scene::GetEntities()
+const std::vector<std::unique_ptr<Entity>>& Scene::GetEntities() const
 {
 	return mEntities;
+}
+
+void Scene::AddLight(Entity* p_light)
+{
+	m_lights.push_back(std::move(std::unique_ptr<Entity>(p_light)));
+}
+
+const std::vector<std::unique_ptr<Entity>>& Scene::GetLights() const
+{
+	return m_lights;
 }
 
 void Scene::SetCurrentCamera(Entity* pCamera)

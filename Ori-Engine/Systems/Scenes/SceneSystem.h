@@ -11,6 +11,7 @@ public:
 	SceneSystem();
 	~SceneSystem();
 
+	void AddScene(Scene * pp_scene);
 	void AddScene(std::unique_ptr<Scene> pup_scene);
 	Scene& AddEmptyScene();
 	Scene* GetCurrentScene();

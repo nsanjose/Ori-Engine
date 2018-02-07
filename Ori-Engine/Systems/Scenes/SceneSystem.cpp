@@ -8,6 +8,15 @@ SceneSystem::~SceneSystem()
 {
 }
 
+void SceneSystem::AddScene(Scene* pp_scene)
+{
+	mup_scenes.push_back(std::move(std::unique_ptr<Scene>(pp_scene)));
+	if (mup_scenes.size() == 1)
+	{
+		mp_current_scene = mup_scenes.back().get();
+	}
+}
+
 void SceneSystem::AddScene(std::unique_ptr<Scene> pup_scene)
 {
 	mup_scenes.push_back(std::move(pup_scene));
