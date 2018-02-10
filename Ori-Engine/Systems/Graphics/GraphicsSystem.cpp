@@ -71,7 +71,7 @@ void GraphicsSystem::Draw(Scene* pp_current_scene, float p_delta_time)
 	if (pp_current_scene == nullptr || pp_current_scene->GetCurrentCamera() == nullptr) { return; }
 
 	ID3D11RenderTargetView* rtv = mp_backbuffer_rtv;
-	if (pp_current_scene->is_post_processed) { rtv = mup_post_processor->GetFrameBufferRtv(); }
+	if (pp_current_scene->is_tone_mapped) { rtv = mup_post_processor->GetFrameBufferRtv(); }
 
 	// Start fresh
 	float zero_color[4] = { 0, 0, 0, 0 };
@@ -79,8 +79,15 @@ void GraphicsSystem::Draw(Scene* pp_current_scene, float p_delta_time)
 	mp_context->ClearRenderTargetView(mup_post_processor->GetFrameBufferRtv(), zero_color);
 	mup_deferred_renderer->ClearAllGBuffers();
 
+	//mup_deferred_renderer->DebugBufferPositions(pp_current_scene->GetEntities(), *pp_current_scene->GetCurrentCamera());
+
 	// Buffer material and spatial data
 	mup_deferred_renderer->PopulateGBuffers(pp_current_scene->GetEntities(), *pp_current_scene->GetCurrentCamera());
+
+	if (pp_current_scene->enable_ssao)
+	{
+		mup_deferred_renderer->SSAO(*pp_current_scene->GetCurrentCamera());
+	}
 
 	// Apply environmental lighting
 	if (pp_current_scene->GetCurrentSkyBox() != nullptr)
@@ -137,7 +144,7 @@ void GraphicsSystem::Draw(Scene* pp_current_scene, float p_delta_time)
 	// Transparent draws
 
 	// Make it pretty
-	if (pp_current_scene->is_post_processed)
+	if (pp_current_scene->is_tone_mapped)
 	{
 		mup_post_processor->GenerateAverageLuminance(mup_post_processor->GetFrameBufferSrv(), p_delta_time);
 		mup_post_processor->Bloom(mup_post_processor->GetFrameBufferSrv());

@@ -11,6 +11,7 @@
 float2 EncodeNormal_StereographicProjection(float3 n)
 {
 	float scale = 1.7777;
+	//if (n.z == -1) { n.z = .00000001f; }
 	float2 eN = n.xy / (n.z + 1);
 	eN /= scale;
 	eN = eN * 0.5 + 0.5;
@@ -31,10 +32,25 @@ float3 DecodeNormal_StereographicProjection(float2 eN)
 	-----------------------------------------------------------------------------------------------------	*/
 float2 EncodeNormal_SphereMap(float3 n)
 {
+	float2 en = normalize(n.xy) * sqrt(n.z * 0.5f + 0.5f);
+	en = en * 0.5f + 0.5f;
+	return en;
+}
+float3 DecodeNormal_SphereMap(float2 eN)
+{
+	float4 nn = float4(eN, 0, 0) * float4(2, 2, 0, 0) + float4(-1, -1, 1, -1);
+	float l = dot(nn.xyz, -nn.xyw);
+	nn.z = l;
+	nn.xy = sqrt(l);
+	return nn.xyz * 2 + float3(0, 0, -1);
+}
+float2 EncodeNormal_LaeaProjection(float3 n)
+{
+	if (n.z == -1) { n.z = -.9999999f; }
 	float p = sqrt(n.z * 8 + 8);
 	return float2(n.xy / p + 0.5);
 }
-float3 DecodeNormal_SphereMap(float2 eN)
+float3 DecodeNormal_LaeaProjection(float2 eN)
 {
 	float2 feN = eN * 4 - 2;
 	float f = dot(feN, feN);

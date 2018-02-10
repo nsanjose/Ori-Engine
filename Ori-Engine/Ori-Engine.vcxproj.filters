@@ -292,5 +292,14 @@
     <FxCompile Include="Systems\Graphics\Shaders\deferred_apply_ibl_pixel.hlsl">
       <Filter>Systems\Graphics\Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\debug_buffer_positions_vertex.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\debug_buffer_positions_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Systems\Graphics\Shaders\deferred_buffer_ssao_pixel.hlsl">
+      <Filter>Systems\Graphics\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

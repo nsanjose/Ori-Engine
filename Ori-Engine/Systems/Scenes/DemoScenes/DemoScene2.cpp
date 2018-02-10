@@ -9,7 +9,8 @@ using namespace DirectX;
 DemoScene2::DemoScene2(ID3D11Device* pp_device, ID3D11DeviceContext* pp_context, float frame_width, float frame_height,
 	ImageBasedLightingBaker* ibl_baker, ShadowRenderer* shadow_renderer)
 {
-	is_post_processed = false;
+	is_tone_mapped = false;
+	enable_ssao = false;
 
 	Entity* camera = new Entity(
 		std::make_unique<TransformComponent>(

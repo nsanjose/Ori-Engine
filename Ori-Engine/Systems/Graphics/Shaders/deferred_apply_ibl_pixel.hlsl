@@ -12,8 +12,6 @@ cbuffer ConstantBuffer : register(b0)
 	float4x4 inverse_view_matrix		: packoffset(c0);
 	float4x4 inverse_projection_matrix	: packoffset(c4);
 	float3 camera_position_world_space	: packoffset(c8);
-	float camera_projection_a			: packoffset(c8.w);
-	float camera_projection_b			: packoffset(c9);
 };
 
 SamplerState sampler_point					: register(s0);
@@ -40,19 +38,21 @@ float4 main(VsOut input) : SV_TARGET
 	=====================================================================================================
 	Layout :	Rgba16f		|				  base color					|	 shadows	|
 				Rgba16f		|		 encoded normal			|   metalness	|   roughness	|
-				Rgba16f		|		x		|		x		|		x		|	   ao		|
+				Rgba16f		|		x		|		x		|	  ssao		|	   ao		|
 				D24S8		|				  hardware depth				|    stencil	|
 	-----------------------------------------------------------------------------------------------------	*/
 	float3 base_color		= gbuffer_0.Sample(sampler_point, input.tex_coord).rgb;
 	float2 encoded_normal	= gbuffer_1.Sample(sampler_point, input.tex_coord).rg;
 	float metalness			= gbuffer_1.Sample(sampler_point, input.tex_coord).b;
 	float roughness			= gbuffer_1.Sample(sampler_point, input.tex_coord).a;
+	float ssao				= gbuffer_2.Sample(sampler_point, input.tex_coord).b;
 	float ao				= gbuffer_2.Sample(sampler_point, input.tex_coord).a;
 	float depth				= gbuffer_3.Sample(sampler_point, input.tex_coord).r;
 /*	=====================================================================================================
 		Reconstructions from G-Buffer
 	=====================================================================================================	*/
 	float3 normal = DecodeNormal_StereographicProjection(encoded_normal);
+	normal = mul(normal, inverse_view_matrix);
 	// -----------------------------------------------------------------------------------------------------
 	float4 position_clip_space = float4(input.tex_coord * 2 - 1, depth, 1);
 	position_clip_space.y *= -1;									
@@ -84,7 +84,7 @@ float4 main(VsOut input) : SV_TARGET
 	//float3 ks = F;	// fresnel already applied in specular components
 	float3 kd = (1.0f - F) * (1.0f - metalness);
 	float3 lighting = kd * indirect_diffuse + /*ks **/ indirect_specular;
-	float3 final_color = lighting * ao;
+	float3 final_color = lighting * ao * ssao;
 
 	return float4(final_color, 1.0f);
 }

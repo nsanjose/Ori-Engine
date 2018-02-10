@@ -1,6 +1,9 @@
 #include "DeferredRenderer.h"
 
+#include <WICTextureLoader.h>
+
 #include <iostream>
+#include <string>
 
 using namespace DirectX;
 
@@ -38,9 +41,9 @@ DeferredRenderer::DeferredRenderer(ID3D11Device* pp_device, ID3D11DeviceContext*
 	D3D11_SAMPLER_DESC sampler_point = {};
 	ZeroMemory(&sampler_point, sizeof(D3D11_SAMPLER_DESC));
 	sampler_point.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-	sampler_point.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
-	sampler_point.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
-	sampler_point.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	sampler_point.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampler_point.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampler_point.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 	mp_device->CreateSamplerState(&sampler_point, mcp_sampler_point.GetAddressOf());
 	D3D11_SAMPLER_DESC sampler_bilinear_desc = {};
 	ZeroMemory(&sampler_bilinear_desc, sizeof(D3D11_SAMPLER_DESC));
@@ -164,6 +167,9 @@ DeferredRenderer::DeferredRenderer(ID3D11Device* pp_device, ID3D11DeviceContext*
 	mp_device->CreateBlendState(&accumulate_shading_blend_desc, mcp_accumulate_shading_blend_state.GetAddressOf());
 
 	InitializeGBuffer();
+	InitializeSSAO();
+
+	//InitializeDebugBufferPosition();
 }
 
 DeferredRenderer::~DeferredRenderer()
@@ -278,7 +284,10 @@ void DeferredRenderer::PopulateShadowBuffer(const Entity& pr_light, const std::v
 		cascaded_shadow.m_cascade_projections[i]._41 = cascaded_shadow.m_cascade_far_clips[i];
 	}
 	mup_deferred_shadow_buffer_pixel_shader->SetConstantBufferVariable("cascade_projections", &cascaded_shadow.m_cascade_projections[0], sizeof(XMFLOAT4X4) * MAX_NUM_SHADOW_CASCADES);
-
+	for (UINT i = 0; i < MAX_NUM_SHADOW_CASCADES - 1; i++)
+	{
+		cascaded_shadow.m_cascade_projections[i]._41 = 0;
+	}
 	// PCF
 	mup_deferred_shadow_buffer_pixel_shader->SetConstantBufferFloat("shadow_map_width", 1024);
 	mup_deferred_shadow_buffer_pixel_shader->SetConstantBufferFloat("shadow_map_height", 1024);
@@ -337,8 +346,8 @@ void DeferredRenderer::PopulateGBuffers(const std::vector<std::unique_ptr<Entity
 	//mup_deferred_buffer_pixel_shader->SetShader();
 
 	CameraComponent* camera_component = pCameraEntity.GetComponentByType<CameraComponent>();
-	DirectX::XMMATRIX temp_camera_view_matrix = DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&camera_component->m_view_matrix));
-	DirectX::XMMATRIX temp_camera_projection_matrix = DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&camera_component->m_projection_matrix));
+	XMMATRIX temp_camera_view_matrix = XMMatrixTranspose(XMLoadFloat4x4(&camera_component->m_view_matrix));
+	XMMATRIX temp_camera_projection_matrix = XMMatrixTranspose(XMLoadFloat4x4(&camera_component->m_projection_matrix));
 	//mup_deferred_buffer_pixel_shader->SetSamplerState("sampler_filtering_choice", mp_sampler_filtering_choice);
 
 	D3D11_VIEWPORT vp = { 0.0f, 0.0f, (float)mr_width, (float)mr_height, 0.0f, 1.0f };
@@ -355,11 +364,14 @@ void DeferredRenderer::PopulateGBuffers(const std::vector<std::unique_ptr<Entity
 		Mesh* mesh = draw_component->GetMesh();
 		Material* material = draw_component->GetMaterial();
 
-		mup_deferred_buffer_vertex_shader->SetConstantBufferMatrix4x4("world_matrix", transform_component.m_world_matrix);
-		DirectX::XMMATRIX temp_entity_world_matrix = DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&transform_component.m_world_matrix));
-		DirectX::XMMATRIX temp_world_view_projection_matrix = temp_entity_world_matrix * temp_camera_view_matrix * temp_camera_projection_matrix;
-		DirectX::XMFLOAT4X4 world_view_projection_matrix;
-		DirectX::XMStoreFloat4x4(&world_view_projection_matrix, XMMatrixTranspose(temp_world_view_projection_matrix));
+		XMMATRIX temp_entity_world_matrix = XMMatrixTranspose(XMLoadFloat4x4(&transform_component.m_world_matrix));
+		XMMATRIX temp_world_view_matrix = temp_entity_world_matrix * temp_camera_view_matrix;
+		XMFLOAT4X4 world_view_matrix;
+		XMStoreFloat4x4(&world_view_matrix, XMMatrixTranspose(temp_world_view_matrix));
+		mup_deferred_buffer_vertex_shader->SetConstantBufferMatrix4x4("world_view_matrix", world_view_matrix);
+		XMMATRIX temp_world_view_projection_matrix = temp_world_view_matrix * temp_camera_projection_matrix;
+		XMFLOAT4X4 world_view_projection_matrix;
+		XMStoreFloat4x4(&world_view_projection_matrix, XMMatrixTranspose(temp_world_view_projection_matrix));
 		mup_deferred_buffer_vertex_shader->SetConstantBufferMatrix4x4("world_view_projection_matrix", world_view_projection_matrix);
 
 		if (material->IsTestMaterial())
@@ -459,8 +471,6 @@ void DeferredRenderer::CompositeShading(const Entity & pCamera, const Entity & p
 	mup_deferred_composite_pixel_shader->SetConstantBufferMatrix4x4("inverse_view_matrix", camera_component->m_inverse_view);
 	mup_deferred_composite_pixel_shader->SetConstantBufferMatrix4x4("inverse_projection_matrix", camera_component->m_inverse_projection_matrix);
 	mup_deferred_composite_pixel_shader->SetConstantBufferFloat3("camera_position_world_space", pCamera.GetTransformComponent().m_position);
-	mup_deferred_composite_pixel_shader->SetConstantBufferFloat("camera_projection_a", camera_component->m_projection_a);
-	mup_deferred_composite_pixel_shader->SetConstantBufferFloat("camera_projection_b", camera_component->m_projection_b);
 	mup_deferred_composite_pixel_shader->UpdateAllConstantBuffers();
 
 	mp_context->OMSetRenderTargets(1, &prtvFrameBuffer, 0);
@@ -500,8 +510,6 @@ void DeferredRenderer::ApplyIBL(const Entity& pr_camera, SkyBox* pp_skybox, ID3D
 	mup_deferred_apply_ibl_pixel_shader->SetConstantBufferMatrix4x4("inverse_view_matrix", camera_component->m_inverse_view);
 	mup_deferred_apply_ibl_pixel_shader->SetConstantBufferMatrix4x4("inverse_projection_matrix", camera_component->m_inverse_projection_matrix);
 	mup_deferred_apply_ibl_pixel_shader->SetConstantBufferFloat3("camera_position_world_space", pr_camera.GetTransformComponent().m_position);
-	mup_deferred_apply_ibl_pixel_shader->SetConstantBufferFloat("camera_projection_a", camera_component->m_projection_a);
-	mup_deferred_apply_ibl_pixel_shader->SetConstantBufferFloat("camera_projection_b", camera_component->m_projection_b);
 	mup_deferred_apply_ibl_pixel_shader->UpdateAllConstantBuffers();
 
 	mp_context->OMSetRenderTargets(1, &pp_destination_rtv, 0);
@@ -521,3 +529,168 @@ void DeferredRenderer::ApplyIBL(const Entity& pr_camera, SkyBox* pp_skybox, ID3D
 	mp_context->OMSetBlendState(0, 0, 0xfffffff);
 }
 
+void DeferredRenderer::InitializeSSAO()
+{
+	mup_ssao_pixel_shader = std::make_unique<PixelShader>(mp_device, mp_context);
+	if (!mup_ssao_pixel_shader->InitializeShaderFromFile(L"x64/Debug/deferred_buffer_ssao_pixel.cso"))
+		mup_ssao_pixel_shader->InitializeShaderFromFile(L"deferred_buffer_ssao_pixel.cso");
+
+	D3D11_BLEND_DESC ssao_blend_desc;
+	ssao_blend_desc.AlphaToCoverageEnable = false;
+	ssao_blend_desc.IndependentBlendEnable = false;
+	ssao_blend_desc.RenderTarget[0].BlendEnable = true;
+	ssao_blend_desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_REV_SUBTRACT;
+	ssao_blend_desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+	ssao_blend_desc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+	ssao_blend_desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	ssao_blend_desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO;
+	ssao_blend_desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+	ssao_blend_desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_BLUE;
+	mp_device->CreateBlendState(&ssao_blend_desc, mcp_ssao_blend_state.GetAddressOf());
+
+	CreateWICTextureFromFile(mp_device, mp_context, L"Resources/Texture Files/noise.png", 0, mcp_noise_map_srv.GetAddressOf());
+}
+
+void DeferredRenderer::SSAO(const Entity& pr_camera)
+{
+	CameraComponent* camera_component = pr_camera.GetComponentByType<CameraComponent>();
+	if (camera_component == nullptr) { return; }
+
+	mp_context->OMSetBlendState(mcp_ssao_blend_state.Get(), 0, 0xfffffff);
+	mr_quad_renderer.SetVertexShader();
+	mup_ssao_pixel_shader->SetShader();
+
+	mup_ssao_pixel_shader->SetConstantBufferMatrix4x4("inverse_projection_matrix", camera_component->m_inverse_projection_matrix);
+	mup_ssao_pixel_shader->SetConstantBufferMatrix4x4("projection_matrix", camera_component->m_projection_matrix);
+	mup_ssao_pixel_shader->SetConstantBufferMatrix4x4("view_matrix", camera_component->m_view_matrix);
+
+	mup_ssao_pixel_shader->SetSamplerState("sampler_point", mcp_sampler_point.Get());
+	mup_ssao_pixel_shader->SetShaderResourceView("gbuffer_1", mcp_gbuffer_srvs[1].Get());
+	mup_ssao_pixel_shader->SetShaderResourceView("gbuffer_3", mcp_depth_srv.Get());
+
+	mup_ssao_pixel_shader->SetShaderResourceView("noise_map", mcp_noise_map_srv.Get());
+	mup_ssao_pixel_shader->SetConstantBufferFloat2("noise_map_size", XMFLOAT2(64, 64));
+	mup_ssao_pixel_shader->SetConstantBufferFloat2("screen_size", XMFLOAT2(mr_width, mr_height));
+	mup_ssao_pixel_shader->UpdateAllConstantBuffers();
+
+	mp_context->OMSetRenderTargets(1, mcp_gbuffer_rtvs[2].GetAddressOf(), 0);
+	mr_quad_renderer.Draw(mr_width, mr_height);
+
+	// Unbind
+	mp_context->OMSetBlendState(0, 0, 0xfffffff);
+	mup_ssao_pixel_shader->SetSamplerState("sampler_point", 0);
+	mup_ssao_pixel_shader->SetShaderResourceView("gbuffer_1", 0);
+	mup_ssao_pixel_shader->SetShaderResourceView("gbuffer_3", 0);
+	mup_ssao_pixel_shader->SetShaderResourceView("noise_map", 0);
+	mp_context->OMSetRenderTargets(0, 0, 0);
+}
+
+void DeferredRenderer::InitializeDebugBufferPosition()
+{
+	mup_debug_buffer_position_vertex_shader = std::make_unique<VertexShader>(mp_device, mp_context);
+	if (!mup_debug_buffer_position_vertex_shader->InitializeShaderFromFile(L"x64/Debug/debug_buffer_positions_vertex.cso"))
+		mup_debug_buffer_position_vertex_shader->InitializeShaderFromFile(L"debug_buffer_positions_vertex.cso");
+	mup_debug_buffer_position_pixel_shader = std::make_unique<PixelShader>(mp_device, mp_context);
+	if (!mup_debug_buffer_position_pixel_shader->InitializeShaderFromFile(L"x64/Debug/debug_buffer_positions_pixel.cso"))
+		mup_debug_buffer_position_pixel_shader->InitializeShaderFromFile(L"debug_buffer_positions_pixel.cso");
+
+	for (int i = 0; i < m_DEBUG_BUFFER_POSITION_COUNT; i++)
+	{
+		std::string buffer_name = "PositionBuffer";
+		switch (i)
+		{
+		case 0:
+			buffer_name += "_Clip_Space";
+			break;
+		case 1:
+			buffer_name += "_View_Space";
+			break;
+		case 2:
+			buffer_name += "_World_Space";
+			break;
+		}
+
+		D3D11_TEXTURE2D_DESC texture_desc = {};
+		texture_desc.Width				= mr_width;
+		texture_desc.Height				= mr_height;
+		texture_desc.MipLevels			= 1;
+		texture_desc.ArraySize			= 1;
+		texture_desc.Format				= DXGI_FORMAT_R16G16B16A16_FLOAT;
+		texture_desc.SampleDesc.Count	= 1;
+		texture_desc.SampleDesc.Quality = 0;
+		texture_desc.Usage				= D3D11_USAGE_DEFAULT;
+		texture_desc.BindFlags			= D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+		texture_desc.CPUAccessFlags		= 0;
+		texture_desc.MiscFlags			= 0;
+		mp_device->CreateTexture2D(&texture_desc, nullptr, position_buffer_textures[i].GetAddressOf());
+		std::string texture_name(buffer_name + "_Texture");
+		position_buffer_textures[i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(texture_name.c_str()), texture_name.c_str());
+
+		D3D11_RENDER_TARGET_VIEW_DESC rtv_desc = {};
+		rtv_desc.Format					= texture_desc.Format;
+		rtv_desc.ViewDimension			= D3D11_RTV_DIMENSION_TEXTURE2D;
+		rtv_desc.Texture2D.MipSlice		= 0;
+		mp_device->CreateRenderTargetView(position_buffer_textures[i].Get(), &rtv_desc, position_buffer_rtvs[i].GetAddressOf());
+		std::string rtv_name(buffer_name + "_RTV");
+		position_buffer_rtvs[i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(rtv_name.c_str()), rtv_name.c_str());
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+		srv_desc.Format						= texture_desc.Format;
+		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2D;
+		srv_desc.Texture2D.MostDetailedMip	= 0;
+		srv_desc.Texture2D.MipLevels		= 1;
+		mp_device->CreateShaderResourceView(position_buffer_textures[i].Get(), &srv_desc, position_buffer_srvs[i].GetAddressOf());
+		std::string srv_name(buffer_name + "_SRV");
+		position_buffer_srvs[i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(srv_name.c_str()), srv_name.c_str());
+	}
+}
+
+
+void DeferredRenderer::DebugBufferPositions(const std::vector<std::unique_ptr<Entity>>& pr_entities, const Entity& pr_camera)
+{
+	D3D11_VIEWPORT vp = { 0.0f, 0.0f, (float)mr_width, (float)mr_height, 0.0f, 1.0f };
+	mp_context->RSSetViewports(1, &vp);
+
+	mup_debug_buffer_position_vertex_shader->SetShader();
+	mup_debug_buffer_position_pixel_shader->SetShader();
+
+	CameraComponent* camera_component = pr_camera.GetComponentByType<CameraComponent>();
+	DirectX::XMMATRIX temp_camera_view_matrix = DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&camera_component->m_view_matrix));
+	DirectX::XMMATRIX temp_camera_projection_matrix = DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&camera_component->m_projection_matrix));
+
+	for (int i = 0; i < pr_entities.size(); i++)
+	{
+		Entity* entity = pr_entities[i].get();
+		TransformComponent& transform_component = entity->GetTransformComponent();
+		if (!(entity->HasComponent<DrawComponent>())) { continue; }
+		DrawComponent* draw_component = entity->GetComponentByType<DrawComponent>();
+		Mesh* mesh = draw_component->GetMesh();
+
+		mup_debug_buffer_position_vertex_shader->SetConstantBufferMatrix4x4("world_matrix", transform_component.m_world_matrix);
+		DirectX::XMMATRIX temp_entity_world_matrix = DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&transform_component.m_world_matrix));
+		DirectX::XMMATRIX temp_world_view_matrix = temp_entity_world_matrix * temp_camera_view_matrix;
+		DirectX::XMFLOAT4X4 world_view_matrix;
+		DirectX::XMStoreFloat4x4(&world_view_matrix, XMMatrixTranspose(temp_world_view_matrix));
+		mup_debug_buffer_position_vertex_shader->SetConstantBufferMatrix4x4("world_view_matrix", world_view_matrix);
+		DirectX::XMMATRIX temp_world_view_projection_matrix = temp_entity_world_matrix * temp_camera_view_matrix * temp_camera_projection_matrix;
+		DirectX::XMFLOAT4X4 world_view_projection_matrix;
+		DirectX::XMStoreFloat4x4(&world_view_projection_matrix, XMMatrixTranspose(temp_world_view_projection_matrix));
+		mup_debug_buffer_position_vertex_shader->SetConstantBufferMatrix4x4("world_view_projection_matrix", world_view_projection_matrix);
+		mup_debug_buffer_position_vertex_shader->UpdateAllConstantBuffers();
+
+		mp_context->OMSetRenderTargets(m_DEBUG_BUFFER_POSITION_COUNT, position_buffer_rtvs[0].GetAddressOf(), mcp_depth_stencil_view.Get());
+
+		UINT stride = sizeof(Vertex);
+		UINT offset = 0;
+		ID3D11Buffer* vertex_buffer = mesh->GetVertexBuffer();
+		ID3D11Buffer* indexBuffer	= mesh->GetIndexBuffer();
+		mp_context->IASetVertexBuffers(0, 1, &vertex_buffer, &stride, &offset);
+		mp_context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		mp_context->DrawIndexed(mesh->GetIndexCount(), 0, 0);
+	}
+
+	// Clean up
+	mp_context->OMSetRenderTargets(0, 0, 0);
+	mp_context->ClearDepthStencilView(mcp_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+}

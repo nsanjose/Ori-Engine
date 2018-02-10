@@ -29,6 +29,11 @@ public:
 
 	ID3D11DepthStencilView* GetDepthDsv();
 
+	void InitializeSSAO();
+	void SSAO(const Entity& pr_camera);
+
+	void DebugBufferPositions(const std::vector<std::unique_ptr<Entity>>& pr_entities, const Entity& pr_camera);
+
 private:
 	// References
 	ID3D11Device* mp_device;
@@ -67,5 +72,19 @@ private:
 	float m_gbuffer_0_clear_color[4] = { 1, 1, 1, 1 };
 	float m_gbuffer_1_clear_color[4] = { 1, 1, 1, 1 };
 	float m_gbuffer_2_clear_color[4] = { 1, 1, 1, 1 };
+
+	// SSAO Resources
+	std::unique_ptr<PixelShader> mup_ssao_pixel_shader;
+	Microsoft::WRL::ComPtr<ID3D11BlendState> mcp_ssao_blend_state;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mcp_noise_map_srv;
+
+	// Debugging
+	void InitializeDebugBufferPosition();
+	std::unique_ptr<VertexShader> mup_debug_buffer_position_vertex_shader;
+	std::unique_ptr<PixelShader> mup_debug_buffer_position_pixel_shader;
+	static const UINT m_DEBUG_BUFFER_POSITION_COUNT = 3;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> position_buffer_textures[m_DEBUG_BUFFER_POSITION_COUNT];
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> position_buffer_rtvs[m_DEBUG_BUFFER_POSITION_COUNT];
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> position_buffer_srvs[m_DEBUG_BUFFER_POSITION_COUNT];
 };
 

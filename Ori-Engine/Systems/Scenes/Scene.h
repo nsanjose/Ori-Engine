@@ -21,7 +21,8 @@ public:
 	void SetCurrentSkyBox(SkyBox * pSkyBox);
 	SkyBox* GetCurrentSkyBox();
 
-	bool is_post_processed = true;
+	bool is_tone_mapped = false;
+	bool enable_ssao = false;
 	
 private:
 	std::vector<std::unique_ptr<Entity>> mEntities;

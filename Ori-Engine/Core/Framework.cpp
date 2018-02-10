@@ -32,21 +32,21 @@ void Framework::Initialize()
 	ImageBasedLightingBaker * ibl_baker = mup_graphics_system->GetImageBasedLightingBaker();
 	ShadowRenderer* shadow_renderer = mup_graphics_system->GetShadowRenderer();
 
-	/**/
+	/*
 	DemoScene* demo_scene = new DemoScene(	// PBR, IBL, Particles
 		mcp_device.Get(), mcp_context.Get(), m_width, m_height,
 		ibl_baker, shadow_renderer);
-	/**/
+	*/
 	/*
 	DemoScene2* demo_scene = new DemoScene2(	// CSM
 		mcp_device.Get(), mcp_context.Get(), m_width, m_height,
 		ibl_baker, shadow_renderer);
 	*/
-	/*
-	DemoScene3* demo_scene = new DemoScene3(	// nothing yet
+	/**/
+	DemoScene3* demo_scene = new DemoScene3(	// SSAO
 		mcp_device.Get(), mcp_context.Get(), m_width, m_height,
 		ibl_baker, shadow_renderer);
-	*/
+	/**/
 
 	mup_scene_manager->AddScene(demo_scene);
 }

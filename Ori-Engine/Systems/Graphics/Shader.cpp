@@ -48,22 +48,6 @@ void AbstractShader::RecursiveLayoutReflectionVariableMembers(UINT p_cbuffer_i, 
 			variable_reflection.m_byte_offset			= p_offset_hierarchy + member_type_desc.Offset;
 			variable_reflection.m_size					= GetSizeOfShaderVariableType(member_type);
 		}
-
-		ID3D11ShaderReflectionType* interface_type = pp_var_type->GetInterfaceByIndex(member_i);
-		D3D11_SHADER_TYPE_DESC interface_type_desc;
-		if (interface_type)
-		{
-			interface_type->GetDesc(&interface_type_desc);
-		}
-
-		ID3D11ShaderReflectionType* sub_type = pp_var_type->GetSubType();
-		D3D11_SHADER_TYPE_DESC sub_type_desc;
-		if (sub_type)
-		{
-			sub_type->GetDesc(&sub_type_desc);
-		}
-
-		int blocker = 0;
 	}
 }
 
@@ -95,9 +79,10 @@ bool AbstractShader::InitializeShaderFromFile(LPCWSTR shaderFile)
 	// Create reflection variables to simplify interaction
 	hr = D3DReflect(mcp_shader_blob->GetBufferPointer(), mcp_shader_blob->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)mcp_shader_reflection.GetAddressOf());
 	if (FAILED(hr)) { return false; }
+	hr = mp_device->CreateClassLinkage(mcp_class_linkage.GetAddressOf());
+	if (FAILED(hr)) { return false; }
 
 	// Create derived shader
-	mp_device->CreateClassLinkage(mcp_class_linkage.GetAddressOf());
 	m_is_shader_initialized = CreateDerivedShader(mcp_shader_blob.Get(), mcp_class_linkage.Get());
 	if (!m_is_shader_initialized) { return false; }
 
@@ -106,7 +91,6 @@ bool AbstractShader::InitializeShaderFromFile(LPCWSTR shaderFile)
 	if (FAILED(hr)) { return false; }
 
 	// Create shader input variable reflection collections
-	
 	// Bound input reflections (texture srvs, samplers)
 	unsigned int bound_resouce_count = shader_desc.BoundResources;
 	for (unsigned int bound_resource_i = 0; bound_resource_i < bound_resouce_count; bound_resource_i++)

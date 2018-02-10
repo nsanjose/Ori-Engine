@@ -9,6 +9,9 @@ using namespace DirectX;
 DemoScene::DemoScene(ID3D11Device* pp_device, ID3D11DeviceContext* pp_context, float frame_width, float frame_height,
 	ImageBasedLightingBaker* ibl_baker, ShadowRenderer* shadow_renderer)
 {
+	is_tone_mapped = true;
+	enable_ssao = false;
+
 	SkyBox * skybox = new SkyBox();
 	skybox->LoadEnvMap(*pp_device, L"Resources/Cube Maps/Humus/Stairs.dds");
 	skybox->LoadIrradianceMap(*pp_device, L"Resources/Cube Maps/Humus/Stairs_Irradiance.dds");
