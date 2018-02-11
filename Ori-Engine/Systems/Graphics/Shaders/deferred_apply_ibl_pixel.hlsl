@@ -52,12 +52,7 @@ float4 main(VsOut input) : SV_TARGET
 	=====================================================================================================	*/
 	float3 normal_view_space = DecodeNormal_StereographicProjection(encoded_normal);
 	float3 normal_world_space = mul(normal_view_space, inverse_view_matrix);
-	// -----------------------------------------------------------------------------------------------------
-	float4 position_clip_space = float4(input.tex_coord * 2 - 1, depth, 1);
-	position_clip_space.y *= -1;									
-	float4 position_view_space = mul(position_clip_space, inverse_projection_matrix);
-	position_view_space /= position_view_space.w;
-	float3 position_world_space = mul(position_view_space, inverse_view_matrix);
+	float3 position_world_space = GetPositionWorldSpaceFromDepth(input.tex_coord, depth, inverse_projection_matrix, inverse_view_matrix);
 /*	=====================================================================================================
 		Lighting
 	=====================================================================================================	*/	/*

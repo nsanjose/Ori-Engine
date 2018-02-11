@@ -54,11 +54,7 @@ float4 main(VsOut input) : SV_TARGET
 		Reconstructions from G-Buffer
 	=====================================================================================================	*/
 	float3 normal_view_space = DecodeNormal_StereographicProjection(encoded_normal);
-	// -----------------------------------------------------------------------------------------------------
-	float4 position_clip_space = float4(input.tex_coord * 2 - 1, depth, 1);
-	position_clip_space.y *= -1;									
-	float4 position_view_space = mul(position_clip_space, inverse_projection_matrix);
-	position_view_space /= position_view_space.w;
+	float4 position_view_space = GetPositionViewSpaceFromDepth(input.tex_coord, depth, inverse_projection_matrix);
 /*	=====================================================================================================
 		Lighting
 	=====================================================================================================	*/	/*

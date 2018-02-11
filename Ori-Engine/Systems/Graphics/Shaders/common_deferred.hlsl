@@ -10,8 +10,9 @@
 	-----------------------------------------------------------------------------------------------------	*/
 float2 EncodeNormal_StereographicProjection(float3 n)
 {
+	n.z *= -1;
 	float scale = 1.7777;
-	//if (n.z == -1) { n.z = .00000001f; }
+	//if (n.z + 1 == 0) { n.z = .00000001f; }
 	float2 eN = n.xy / (n.z + 1);
 	eN /= scale;
 	eN = eN * 0.5 + 0.5;
@@ -25,6 +26,7 @@ float3 DecodeNormal_StereographicProjection(float2 eN)
 	float3 n;
 	n.xy = g * nn.xy;
 	n.z = g - 1;
+	n.z *= -1;
 	return n;
 }
 /*	-----------------------------------------------------------------------------------------------------
@@ -74,4 +76,51 @@ float3 DecodeNormal_Cry(float2 eN)
 	n.z = length(eN.xy) * 2 - 1;
 	n.xy = normalize(eN.xy) * sqrt(1 - n.z * n.z);
 	return n;
+}
+
+/*	=====================================================================================================
+		Reconstructing Position from Depth
+	=====================================================================================================	*/	/*
+		Position View Space from Depth
+	-----------------------------------------------------------------------------------------------------	*/
+float4 GetPositionViewSpaceFromDepth(float2 tex_coord, float hardware_depth, float4x4 inverse_projection_matrix)
+{
+	float4 position_cs = float4(tex_coord * 2 - 1, hardware_depth, 1);
+	position_cs.y *= -1;
+	float4 position_vs = mul(position_cs, inverse_projection_matrix);
+	position_vs /= position_vs.w;
+	return position_vs;
+}
+/*	-----------------------------------------------------------------------------------------------------
+		Position World Space from Depth
+	-----------------------------------------------------------------------------------------------------	*/
+float3 GetPositionWorldSpaceFromDepth(float2 tex_coord, float hardware_depth, float4x4 inverse_projection_matrix, float4x4 inverse_view_matrix)
+{
+	return mul(GetPositionViewSpaceFromDepth(tex_coord, hardware_depth, inverse_projection_matrix), inverse_view_matrix);
+}
+/*	=====================================================================================================
+		Projecting Position to Texture Coordinates
+	=====================================================================================================	*/	/*
+		Screen NDC from Position Clip Space
+	-----------------------------------------------------------------------------------------------------	*/
+float2 GetScreenNDCFromPositionClipSpace(float4 position_cs)
+{
+	float2 position_ndc = position_cs.xy / position_cs.w;
+	position_ndc.y *= -1;
+	position_ndc = position_ndc * 0.5f + 0.5f;
+	return position_ndc;
+}
+/*	-----------------------------------------------------------------------------------------------------
+		Screen NDC from Position View Space
+	-----------------------------------------------------------------------------------------------------	*/
+float2 GetScreenNDCFromPositionViewSpace(float4 position_vs, float4x4 projection_matrix)
+{
+	return GetScreenNDCFromPositionClipSpace(mul(position_vs, projection_matrix));
+}
+/*	-----------------------------------------------------------------------------------------------------
+		Screen NDC from Position World Space
+	-----------------------------------------------------------------------------------------------------	*/
+float2 GetScreenNDCFromPositionWorldSpace(float3 position_ws, float4x4 view_matrix, float4x4 projection_matrix)
+{
+	return GetScreenNDCFromPositionViewSpace(mul(position_ws, view_matrix), projection_matrix);
 }

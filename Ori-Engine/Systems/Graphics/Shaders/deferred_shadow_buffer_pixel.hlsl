@@ -3,6 +3,7 @@
 		Deferred Shading
 		Accumulate Shadows into GBuffer
 	=====================================================================================================	*/
+#include "common_deferred.hlsl"
 
 static const uint MAX_CASCADES = 5;
 
@@ -60,8 +61,7 @@ PsOut main(VsOut input)
 
 	// calculating shadow map uv
 	float4 position_shadow_clip_space	= mul(mul(input.position_ws, shadow_view_matrix), cascade_projection);
-	float2 shadow_tex_coord				= position_shadow_clip_space.xy / position_shadow_clip_space.w * 0.5f + 0.5f;
-	shadow_tex_coord.y					= 1 - shadow_tex_coord.y;
+	float2 shadow_tex_coord				= GetScreenNDCFromPositionClipSpace(position_shadow_clip_space);
 
 	float depth_from_light = position_shadow_clip_space.z / position_shadow_clip_space.w;
 	
