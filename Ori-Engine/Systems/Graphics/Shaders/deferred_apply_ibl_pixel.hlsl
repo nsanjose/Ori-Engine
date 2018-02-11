@@ -6,12 +6,11 @@
 #include "common_deferred.hlsl"
 #include "common_pbr.hlsl"
 
-cbuffer ConstantBuffer : register(b0)
+cbuffer CameraDataPerFrame : register(b0)
 {
-	// reconstructing position_ws
-	float4x4 inverse_view_matrix		: packoffset(c0);
-	float4x4 inverse_projection_matrix	: packoffset(c4);
-	float3 camera_position_world_space	: packoffset(c8);
+	float4x4 inverse_projection_matrix;
+	float4x4 inverse_view_matrix;
+	float3 camera_position_world_space;
 };
 
 SamplerState sampler_point					: register(s0);
@@ -51,14 +50,14 @@ float4 main(VsOut input) : SV_TARGET
 /*	=====================================================================================================
 		Reconstructions from G-Buffer
 	=====================================================================================================	*/
-	float3 normal = DecodeNormal_StereographicProjection(encoded_normal);
-	normal = mul(normal, inverse_view_matrix);
+	float3 normal_view_space = DecodeNormal_StereographicProjection(encoded_normal);
+	float3 normal_world_space = mul(normal_view_space, inverse_view_matrix);
 	// -----------------------------------------------------------------------------------------------------
 	float4 position_clip_space = float4(input.tex_coord * 2 - 1, depth, 1);
 	position_clip_space.y *= -1;									
 	float4 position_view_space = mul(position_clip_space, inverse_projection_matrix);
 	position_view_space /= position_view_space.w;
-	float3 position_world_space = mul(position_view_space, inverse_view_matrix).xyz;
+	float3 position_world_space = mul(position_view_space, inverse_view_matrix);
 /*	=====================================================================================================
 		Lighting
 	=====================================================================================================	*/	/*
@@ -67,12 +66,11 @@ float4 main(VsOut input) : SV_TARGET
 	float3 F0 = { 0.04f, 0.04f, 0.04f };	// specular reflectance at normal incidence (~0.02-0.08 for non-metals, baseColor for metals)
 	F0 = lerp(F0, base_color, metalness);
 	float3 v = normalize(camera_position_world_space - position_world_space);	// view direction
-	float3 n = normalize(normal);												// normal direction
+	float3 n = normalize(normal_world_space);									// normal direction
 	float3 r = normalize(reflect(v, n));										// reflection of v across n
 	float NDotV = saturate(max(dot(n, v), 0.0001));
 	// -----------------------------------------------------------------------------------------------------
-	float irradiance = 2.0f;	// if point/spot apply falloff to irradiance
-	float3 F = 0.0f;			// fresnel to copy (out) from specular function
+	float3 F = 0.0f; // fresnel to copy (out) from specular function
 /*	-----------------------------------------------------------------------------------------------------
 		BRDF Calculations
 	-----------------------------------------------------------------------------------------------------	*/

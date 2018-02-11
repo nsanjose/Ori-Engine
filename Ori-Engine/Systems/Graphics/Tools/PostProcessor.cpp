@@ -65,12 +65,16 @@ void PostProcessor::InitializeFrameBuffers(float pWidth, float pHeight)
 	m_frame_buffer_desc.MiscFlags			= 0;
 	ID3D11Texture2D* frameBuffer1;
 	mp_device->CreateTexture2D(&m_frame_buffer_desc, nullptr, &frameBuffer1);
+	std::string frame_buffer_name("Frame Buffer Texture");
+	frameBuffer1->SetPrivateData(WKPDID_D3DDebugObjectName, frame_buffer_name.size(), frame_buffer_name.c_str());
 
 	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 	rtvDesc.Format							= m_frame_buffer_desc.Format;
 	rtvDesc.ViewDimension					= D3D11_RTV_DIMENSION_TEXTURE2D;
 	rtvDesc.Texture2D.MipSlice				= 0;
 	mp_device->CreateRenderTargetView(frameBuffer1, &rtvDesc, mcp_frame_buffer_rtv.GetAddressOf());
+	std::string frame_buffer_rtv_name("Frame Buffer RTV");
+	mcp_frame_buffer_rtv.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, frame_buffer_rtv_name.size(), frame_buffer_rtv_name.c_str());
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = m_frame_buffer_desc.Format;
@@ -78,6 +82,8 @@ void PostProcessor::InitializeFrameBuffers(float pWidth, float pHeight)
 	srvDesc.Texture2D.MipLevels				= 1;
 	srvDesc.Texture2D.MostDetailedMip		= 0;
 	mp_device->CreateShaderResourceView(frameBuffer1, &srvDesc, mcp_frame_buffer_srv.GetAddressOf());
+	std::string frame_buffer_srv_name("Frame Buffer SRV");
+	mcp_frame_buffer_srv.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, frame_buffer_srv_name.size(), frame_buffer_srv_name.c_str());
 
 	frameBuffer1->Release();
 }
@@ -127,12 +133,16 @@ void PostProcessor::InitializeBloom()
 	bloom_extract_texture_desc.MiscFlags			= D3D11_RESOURCE_MISC_GENERATE_MIPS;
 	ID3D11Texture2D* bloom_extract_texture;
 	mp_device->CreateTexture2D(&bloom_extract_texture_desc, nullptr, &bloom_extract_texture);
+	std::string bloom_extract_texture_name("Bloom Extraction Texture");
+	bloom_extract_texture->SetPrivateData(WKPDID_D3DDebugObjectName, bloom_extract_texture_name.size(), bloom_extract_texture_name.c_str());
 
 	D3D11_RENDER_TARGET_VIEW_DESC bloom_extract_rtv_desc = {};
 	bloom_extract_rtv_desc.Format				= bloom_extract_texture_desc.Format;
 	bloom_extract_rtv_desc.ViewDimension		= D3D11_RTV_DIMENSION_TEXTURE2D;
 	bloom_extract_rtv_desc.Texture2D.MipSlice	= 0;
 	mp_device->CreateRenderTargetView(bloom_extract_texture, &bloom_extract_rtv_desc, mcp_bloom_extract_rtv.GetAddressOf());
+	std::string bloom_extract_rtv_name("Bloom Extraction RTV");
+	mcp_bloom_extract_rtv.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, bloom_extract_rtv_name.size(), bloom_extract_rtv_name.c_str());
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC bloom_extract_srv_desc = {};
 	bloom_extract_srv_desc.Format						= bloom_extract_texture_desc.Format;
@@ -140,7 +150,8 @@ void PostProcessor::InitializeBloom()
 	bloom_extract_srv_desc.Texture2D.MostDetailedMip	= 0;
 	bloom_extract_srv_desc.Texture2D.MipLevels			= bloom_extract_texture_desc.MipLevels;
 	mp_device->CreateShaderResourceView(bloom_extract_texture, &bloom_extract_srv_desc, mcp_bloom_extract_srv.GetAddressOf());
-	//bloom_extract_texture->Release();
+	std::string bloom_extract_srv_name("Bloom Extraction SRV");
+	mcp_bloom_extract_srv.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, bloom_extract_srv_name.size(), bloom_extract_srv_name.c_str());
 
 	// Vertical blur
 	for (UINT downsample_i = 0; downsample_i < m_BLOOM_DOWNSAMPLE_COUNT; downsample_i++)
@@ -151,6 +162,8 @@ void PostProcessor::InitializeBloom()
 		downsample_rtv_desc.Texture2D.MipSlice	= 1 + downsample_i;
 		mcp_bloom_vertical_blur_downsample_rtvs.push_back(Microsoft::WRL::ComPtr<ID3D11RenderTargetView>());
 		mp_device->CreateRenderTargetView(bloom_extract_texture, &downsample_rtv_desc, mcp_bloom_vertical_blur_downsample_rtvs.back().GetAddressOf());
+		std::string bloom_downsample_rtv_name("Bloom Downsample " + std::to_string(downsample_i) + " Vertical Blur RTV");
+		mcp_bloom_vertical_blur_downsample_rtvs.back().Get()->SetPrivateData(WKPDID_D3DDebugObjectName, bloom_downsample_rtv_name.size(), bloom_downsample_rtv_name.c_str());
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC downsample_srv_desc = {};
 		downsample_srv_desc.Format						= m_frame_buffer_desc.Format;
@@ -159,6 +172,8 @@ void PostProcessor::InitializeBloom()
 		downsample_srv_desc.Texture2D.MipLevels			= 1;
 		mcp_bloom_vertical_blur_downsample_srvs.push_back(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>());
 		mp_device->CreateShaderResourceView(bloom_extract_texture, &downsample_srv_desc, mcp_bloom_vertical_blur_downsample_srvs.back().GetAddressOf());
+		std::string bloom_downsample_srv_name("Bloom Downsample " + std::to_string(downsample_i) + " Vertical Blur SRV");
+		mcp_bloom_vertical_blur_downsample_srvs.back().Get()->SetPrivateData(WKPDID_D3DDebugObjectName, bloom_downsample_srv_name.size(), bloom_downsample_srv_name.c_str());
 	}
 	bloom_extract_texture->Release();
 
@@ -183,6 +198,8 @@ void PostProcessor::InitializeBloom()
 
 		ID3D11Texture2D* downsample_texture;
 		mp_device->CreateTexture2D(&m_downsample_descs.back(), nullptr, &downsample_texture);
+		std::string bloom_downsample_name("Bloom Downsample " + std::to_string(downsample_i) + " Horizontal Blur Texture");
+		downsample_texture->SetPrivateData(WKPDID_D3DDebugObjectName, bloom_downsample_name.size(), bloom_downsample_name.c_str());
 
 		D3D11_RENDER_TARGET_VIEW_DESC downsample_rtv_desc = {};
 		downsample_rtv_desc.Format				= m_downsample_descs.back().Format;
@@ -190,6 +207,8 @@ void PostProcessor::InitializeBloom()
 		downsample_rtv_desc.Texture2D.MipSlice	= 0;
 		mcp_bloom_horizontal_blur_downsample_rtvs.push_back(Microsoft::WRL::ComPtr<ID3D11RenderTargetView>());
 		mp_device->CreateRenderTargetView(downsample_texture, &downsample_rtv_desc, mcp_bloom_horizontal_blur_downsample_rtvs.back().GetAddressOf());
+		std::string bloom_downsample_rtv_name("Bloom Downsample " + std::to_string(downsample_i) + " Horizontal Blur RTV");
+		mcp_bloom_horizontal_blur_downsample_rtvs.back().Get()->SetPrivateData(WKPDID_D3DDebugObjectName, bloom_downsample_rtv_name.size(), bloom_downsample_rtv_name.c_str());
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC downsample_srv_desc = {};
 		downsample_srv_desc.Format						= m_downsample_descs.back().Format;
@@ -198,6 +217,8 @@ void PostProcessor::InitializeBloom()
 		downsample_srv_desc.Texture2D.MipLevels			= 1;
 		mcp_bloom_horizontal_blur_downsample_srvs.push_back(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>());
 		mp_device->CreateShaderResourceView(downsample_texture, &downsample_srv_desc, mcp_bloom_horizontal_blur_downsample_srvs.back().GetAddressOf());
+		std::string bloom_downsample_srv_name("Bloom Downsample " + std::to_string(downsample_i) + " Horizontal Blur SRV");
+		mcp_bloom_horizontal_blur_downsample_srvs.back().Get()->SetPrivateData(WKPDID_D3DDebugObjectName, bloom_downsample_srv_name.size(), bloom_downsample_srv_name.c_str());
 
 		// Texture references are not needed. This does not unallocate the texture memory.
 		downsample_texture->Release();
@@ -363,30 +384,36 @@ void PostProcessor::InitializeToneMap()
 	// Init Eye Adaptive Exposure
 	// Luminance Buffer
 	D3D11_TEXTURE2D_DESC luminanceDesc = {};
-	luminanceDesc.Width = m_frame_buffer_desc.Width;
-	luminanceDesc.Height = m_frame_buffer_desc.Height;
-	luminanceDesc.MipLevels = 1;
-	luminanceDesc.ArraySize = 1;
-	luminanceDesc.Format = DXGI_FORMAT_R32_FLOAT;
-	luminanceDesc.SampleDesc.Count = 1;
-	luminanceDesc.SampleDesc.Quality = 0;
-	luminanceDesc.Usage = D3D11_USAGE_DEFAULT;
-	luminanceDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-	luminanceDesc.CPUAccessFlags = 0;
-	luminanceDesc.MiscFlags = 0;
+	luminanceDesc.Width					= m_frame_buffer_desc.Width;
+	luminanceDesc.Height				= m_frame_buffer_desc.Height;
+	luminanceDesc.MipLevels				= 1;
+	luminanceDesc.ArraySize				= 1;
+	luminanceDesc.Format				= DXGI_FORMAT_R32_FLOAT;
+	luminanceDesc.SampleDesc.Count		= 1;
+	luminanceDesc.SampleDesc.Quality	= 0;
+	luminanceDesc.Usage					= D3D11_USAGE_DEFAULT;
+	luminanceDesc.BindFlags				= D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	luminanceDesc.CPUAccessFlags		= 0;
+	luminanceDesc.MiscFlags				= 0;
 	ID3D11Texture2D * luminanceT2d;
 	mp_device->CreateTexture2D(&luminanceDesc, nullptr, &luminanceT2d);
+	std::string luminance_texture_name("Luminance Map Texture");
+	luminanceT2d->SetPrivateData(WKPDID_D3DDebugObjectName, luminance_texture_name.size(), luminance_texture_name.c_str());
 	D3D11_RENDER_TARGET_VIEW_DESC luminanceRtvDesc = {};
-	luminanceRtvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-	luminanceRtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	luminanceRtvDesc.Format				= DXGI_FORMAT_R32_FLOAT;
+	luminanceRtvDesc.ViewDimension		= D3D11_RTV_DIMENSION_TEXTURE2D;
 	luminanceRtvDesc.Texture2D.MipSlice = 0;
 	mp_device->CreateRenderTargetView(luminanceT2d, &luminanceRtvDesc, mcp_current_luminance_rtv.GetAddressOf());
+	std::string luminance_rtv_name("Luminance Map RTV");
+	mcp_current_luminance_rtv.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, luminance_rtv_name.size(), luminance_rtv_name.c_str());
 	D3D11_SHADER_RESOURCE_VIEW_DESC luminanceSrvDesc = {};
-	luminanceSrvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-	luminanceSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	luminanceSrvDesc.Texture2D.MostDetailedMip = 0;
-	luminanceSrvDesc.Texture2D.MipLevels = -1;
+	luminanceSrvDesc.Format						= DXGI_FORMAT_R32_FLOAT;
+	luminanceSrvDesc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2D;
+	luminanceSrvDesc.Texture2D.MostDetailedMip	= 0;
+	luminanceSrvDesc.Texture2D.MipLevels		= -1;
 	mp_device->CreateShaderResourceView(luminanceT2d, &luminanceSrvDesc, mcp_current_luminance_srv.GetAddressOf());
+	std::string luminance_srv_name("Luminance Map SRV");
+	mcp_current_luminance_srv.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, luminance_rtv_name.size(), luminance_rtv_name.c_str());
 	luminanceT2d->Release();
 	// Adapted Luminance Buffer
 	// Full mip chain required to reach 1x1 texture representing averageAdaptedLuminance
@@ -397,19 +424,39 @@ void PostProcessor::InitializeToneMap()
 	ID3D11Texture2D * adaptedLuminanceT2dSwap1;
 	mp_device->CreateTexture2D(&luminanceDesc, nullptr, &adaptedLuminanceT2dSwap0);
 	mp_device->CreateTexture2D(&luminanceDesc, nullptr, &adaptedLuminanceT2dSwap1);
+	std::string adapt_luminance_texture_name("Adapted Luminance Map Swap 0 Texture");
+	adaptedLuminanceT2dSwap0->SetPrivateData(WKPDID_D3DDebugObjectName, adapt_luminance_texture_name.size(), adapt_luminance_texture_name.c_str());
+	std::string adapt_luminance_texture_swap_name("Adapted Luminance Map Swap 1 Texture");
+	adaptedLuminanceT2dSwap1->SetPrivateData(WKPDID_D3DDebugObjectName, adapt_luminance_texture_swap_name.size(), adapt_luminance_texture_swap_name.c_str());
 	mp_device->CreateRenderTargetView(adaptedLuminanceT2dSwap0, &luminanceRtvDesc, mcp_adapted_luminance_rtvs[m_current_adapted_luminance_resource_i].GetAddressOf());
 	mp_device->CreateRenderTargetView(adaptedLuminanceT2dSwap1, &luminanceRtvDesc, mcp_adapted_luminance_rtvs[!m_current_adapted_luminance_resource_i].GetAddressOf());
+	std::string adapt_luminance_rtv_name("Adapted Luminance Map Swap 0 RTV");
+	mcp_adapted_luminance_rtvs[m_current_adapted_luminance_resource_i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, adapt_luminance_rtv_name.size(), adapt_luminance_rtv_name.c_str());
+	std::string adapt_luminance_rtv_swap_name("Adapted Luminance Map Swap 1 RTV");
+	mcp_adapted_luminance_rtvs[!m_current_adapted_luminance_resource_i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, adapt_luminance_rtv_swap_name.size(), adapt_luminance_rtv_swap_name.c_str());
 	// Full mip chain srv for GenerateMips
 	mp_device->CreateShaderResourceView(adaptedLuminanceT2dSwap0, &luminanceSrvDesc, mcp_adapted_luminance_all_mips_srvs[m_current_adapted_luminance_resource_i].GetAddressOf());
 	mp_device->CreateShaderResourceView(adaptedLuminanceT2dSwap1, &luminanceSrvDesc, mcp_adapted_luminance_all_mips_srvs[!m_current_adapted_luminance_resource_i].GetAddressOf());
+	std::string adapt_luminance_full_srv_name("Adapted Luminance Map Swap 0 SRV All Mips");
+	mcp_adapted_luminance_all_mips_srvs[m_current_adapted_luminance_resource_i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, adapt_luminance_full_srv_name.size(), adapt_luminance_full_srv_name.c_str());
+	std::string adapt_luminance_full_srv_swap_name("Adapted Luminance Map Swap 1 SRV All Mips");
+	mcp_adapted_luminance_all_mips_srvs[!m_current_adapted_luminance_resource_i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, adapt_luminance_full_srv_swap_name.size(), adapt_luminance_full_srv_swap_name.c_str());
 	// Only first mip for rtv, GenerateMips will handle the rest
 	luminanceSrvDesc.Texture2D.MipLevels = 1;
 	mp_device->CreateShaderResourceView(adaptedLuminanceT2dSwap0, &luminanceSrvDesc, mcp_adapted_luminance_first_mip_srvs[m_current_adapted_luminance_resource_i].GetAddressOf());
 	mp_device->CreateShaderResourceView(adaptedLuminanceT2dSwap1, &luminanceSrvDesc, mcp_adapted_luminance_first_mip_srvs[!m_current_adapted_luminance_resource_i].GetAddressOf());
+	std::string adapt_luminance_first_rtv_name("Adapted Luminance Map Swap 0 RTV First Mip");
+	mcp_adapted_luminance_first_mip_srvs[m_current_adapted_luminance_resource_i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, adapt_luminance_first_rtv_name.size(), adapt_luminance_first_rtv_name.c_str());
+	std::string adapt_luminance_first_rtv_swap_name("Adapted Luminance Map Swap 1 RTV First Mip");
+	mcp_adapted_luminance_first_mip_srvs[!m_current_adapted_luminance_resource_i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, adapt_luminance_first_rtv_swap_name.size(), adapt_luminance_first_rtv_swap_name.c_str());
 	// Only last mip for averageAdaptedLuminance 1x1 texture
 	luminanceSrvDesc.Texture2D.MostDetailedMip = m_adapted_luminance_texture_max_mip_level;
 	mp_device->CreateShaderResourceView(adaptedLuminanceT2dSwap0, &luminanceSrvDesc, mcp_adapted_luminance_last_mip_srvs[m_current_adapted_luminance_resource_i].GetAddressOf());
 	mp_device->CreateShaderResourceView(adaptedLuminanceT2dSwap1, &luminanceSrvDesc, mcp_adapted_luminance_last_mip_srvs[!m_current_adapted_luminance_resource_i].GetAddressOf());
+	std::string adapt_luminance_last_srv_name("Adapted Luminance Map Swap 0 SRV Last Mip");
+	mcp_adapted_luminance_last_mip_srvs[m_current_adapted_luminance_resource_i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, adapt_luminance_last_srv_name.size(), adapt_luminance_last_srv_name.c_str());
+	std::string adapt_luminance_last_srv_swap_name("Adapted Luminance Map Swap 1 SRV Last Mip");
+	mcp_adapted_luminance_last_mip_srvs[!m_current_adapted_luminance_resource_i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, adapt_luminance_last_srv_swap_name.size(), adapt_luminance_last_srv_swap_name.c_str());
 	adaptedLuminanceT2dSwap0->Release();
 	adaptedLuminanceT2dSwap1->Release();
 }

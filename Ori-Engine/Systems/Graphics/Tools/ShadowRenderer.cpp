@@ -73,12 +73,16 @@ void ShadowRenderer::EnableShadowing(Entity& pr_light)
 	shadow_texture_desc.Usage = D3D11_USAGE_DEFAULT;
 	ID3D11Texture2D* shadow_texture;
 	mp_device->CreateTexture2D(&shadow_texture_desc, 0, &shadow_texture);
+	std::string shadow_map_name("Shadow Map Texture");
+	shadow_texture->SetPrivateData(WKPDID_D3DDebugObjectName, shadow_map_name.size(), shadow_map_name.c_str());
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC shadow_dsv_desc = {};
 	shadow_dsv_desc.Format = DXGI_FORMAT_D16_UNORM;
 	shadow_dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 	shadow_dsv_desc.Texture2D.MipSlice = 0;
 	mp_device->CreateDepthStencilView(shadow_texture, &shadow_dsv_desc, shadow.shadowDepthStencilView.GetAddressOf());
+	std::string shadow_map_dsv_name("Shadow Map DSV");
+	shadow.shadowDepthStencilView.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, shadow_map_dsv_name.size(), shadow_map_dsv_name.c_str());
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC shadow_srv_desc = {};
 	shadow_srv_desc.Format = DXGI_FORMAT_R16_UNORM;
@@ -86,6 +90,8 @@ void ShadowRenderer::EnableShadowing(Entity& pr_light)
 	shadow_srv_desc.Texture2D.MipLevels = 1;
 	shadow_srv_desc.Texture2D.MostDetailedMip = 0;
 	mp_device->CreateShaderResourceView(shadow_texture, &shadow_srv_desc, shadow.shadowShaderResourceView.GetAddressOf());
+	std::string shadow_map_srv_name("Shadow Map SRV");
+	shadow.shadowShaderResourceView.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, shadow_map_srv_name.size(), shadow_map_srv_name.c_str());
 
 	shadow_texture->Release();
 }
@@ -115,6 +121,8 @@ void ShadowRenderer::EnableCascadedShadowing(Entity& pr_light, UINT p_num_cascad
 	cascaded_shadow_texture_desc.SampleDesc.Quality = 0;
 	cascaded_shadow_texture_desc.Usage				= D3D11_USAGE_DEFAULT;
 	mp_device->CreateTexture2D(&cascaded_shadow_texture_desc, 0, cascaded_shadow.mcp_cascade_texture.GetAddressOf());
+	std::string csm_name("Cascaded Shadow Map Texture Array");
+	cascaded_shadow.mcp_cascade_texture.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, csm_name.size(), csm_name.c_str());
 	D3D11_SHADER_RESOURCE_VIEW_DESC cascaded_shadow_srv_desc = {};
 	cascaded_shadow_srv_desc.Format							= DXGI_FORMAT_R16_UNORM;
 	cascaded_shadow_srv_desc.ViewDimension					= D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
@@ -123,6 +131,8 @@ void ShadowRenderer::EnableCascadedShadowing(Entity& pr_light, UINT p_num_cascad
 	cascaded_shadow_srv_desc.Texture2DArray.FirstArraySlice = 0;
 	cascaded_shadow_srv_desc.Texture2DArray.ArraySize		= cascaded_shadow.m_num_cascades;
 	mp_device->CreateShaderResourceView(cascaded_shadow.mcp_cascade_texture.Get(), &cascaded_shadow_srv_desc, cascaded_shadow.shadowShaderResourceView.GetAddressOf());
+	std::string csm_srv_name("Cascaded Shadow Map SRV Array");
+	cascaded_shadow.shadowShaderResourceView.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, csm_srv_name.size(), csm_srv_name.c_str());
 
 	for (UINT cascade_i = 0; cascade_i < cascaded_shadow.m_num_cascades; cascade_i++)
 	{
@@ -136,8 +146,9 @@ void ShadowRenderer::EnableCascadedShadowing(Entity& pr_light, UINT p_num_cascad
 
 		cascaded_shadow.mcp_cascade_dsvs.emplace_back();
 		mp_device->CreateDepthStencilView(cascaded_shadow.mcp_cascade_texture.Get(), &cascade_dsv_desc, cascaded_shadow.mcp_cascade_dsvs[cascade_i].GetAddressOf());
+		std::string csm_dsv_name("Cascaded Shadow Map Cascade " + std::to_string(cascade_i) + " DSV");
+		cascaded_shadow.mcp_cascade_dsvs[cascade_i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, csm_dsv_name.size(), csm_dsv_name.c_str());
 	}
-	
 }
 
 const Microsoft::WRL::ComPtr<ID3D11SamplerState>& ShadowRenderer::GetSampler() const

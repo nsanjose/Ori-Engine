@@ -33,7 +33,7 @@ void Framework::Initialize()
 	ShadowRenderer* shadow_renderer = mup_graphics_system->GetShadowRenderer();
 
 	/*
-	DemoScene* demo_scene = new DemoScene(	// PBR, IBL, Particles
+	DemoScene* demo_scene = new DemoScene(	// PBR, Particles, Bloom, Eye Adaptive Exposure, Tone Mapping
 		mcp_device.Get(), mcp_context.Get(), m_width, m_height,
 		ibl_baker, shadow_renderer);
 	*/

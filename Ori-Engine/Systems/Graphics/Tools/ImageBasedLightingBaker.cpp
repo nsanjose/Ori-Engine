@@ -19,6 +19,8 @@ ImageBasedLightingBaker::ImageBasedLightingBaker(ID3D11Device* pp_device, ID3D11
 	sampler_desc.MaxAnisotropy = 16;
 	sampler_desc.MaxLOD = D3D11_FLOAT32_MAX;
 	mp_device->CreateSamplerState(&sampler_desc, mcp_sampler_ansio.GetAddressOf());
+	std::string mcp_sampler_ansio_name("Ansio Border Sampler");
+	mcp_sampler_ansio.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, mcp_sampler_ansio_name.size(), mcp_sampler_ansio_name.c_str());
 }
 
 ImageBasedLightingBaker::~ImageBasedLightingBaker()
@@ -39,23 +41,22 @@ void ImageBasedLightingBaker::GeneratePfem(SkyBox* pp_skybox)
 	int textureWidth = 256;
 	int mipCount = 7;
 	D3D11_TEXTURE2D_DESC textureDesc = {};
-	textureDesc.Width = textureWidth;
-	textureDesc.Height = textureWidth;
-	textureDesc.MipLevels = mipCount;
-	textureDesc.ArraySize = 6;
-	textureDesc.SampleDesc.Count = 1;
-	textureDesc.SampleDesc.Quality = 0;
-	textureDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	textureDesc.Usage = D3D11_USAGE_DEFAULT;
-	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-	textureDesc.CPUAccessFlags = 0;
-	textureDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+	textureDesc.Width				= textureWidth;
+	textureDesc.Height				= textureWidth;
+	textureDesc.MipLevels			= mipCount;
+	textureDesc.ArraySize			= 6;
+	textureDesc.SampleDesc.Count	= 1;
+	textureDesc.SampleDesc.Quality	= 0;
+	textureDesc.Format				= DXGI_FORMAT_R16G16B16A16_FLOAT;
+	textureDesc.Usage				= D3D11_USAGE_DEFAULT;
+	textureDesc.BindFlags			= D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+	textureDesc.CPUAccessFlags		= 0;
+	textureDesc.MiscFlags			= D3D11_RESOURCE_MISC_TEXTURECUBE;
 	ID3D11Texture2D* pfemT2d;// = pp_skybox->GetPrefilteredEnvMapT2d();
 	HRESULT hr = mp_device->CreateTexture2D(&textureDesc, nullptr, &pfemT2d);
-	if (FAILED(hr))
-	{
-		throw std::exception();
-	}
+	if (FAILED(hr)) { throw std::exception(); }
+	std::string pfem_texture_name("PFEM Cube Map Texture");
+	pfemT2d->SetPrivateData(WKPDID_D3DDebugObjectName, pfem_texture_name.size(), pfem_texture_name.c_str());
 
 	for (int faceIndex = 0; faceIndex < 6; faceIndex++)
 	{
@@ -77,10 +78,9 @@ void ImageBasedLightingBaker::GeneratePfem(SkyBox* pp_skybox)
 			renderTargetDesc.Texture2DArray.FirstArraySlice = faceIndex;
 			ID3D11RenderTargetView* rtv;
 			HRESULT hr = mp_device->CreateRenderTargetView(pfemT2d, &renderTargetDesc, &rtv);
-			if (FAILED(hr))
-			{
-				throw std::exception();
-			}
+			if (FAILED(hr)) { throw std::exception(); }
+			std::string pfem_rtv_name("PFEM Cube Map RTV");
+			rtv->SetPrivateData(WKPDID_D3DDebugObjectName, pfem_rtv_name.size(), pfem_rtv_name.c_str());
 
 			mp_context->OMSetRenderTargets(1, &rtv, 0);
 			float clearColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -133,12 +133,16 @@ void ImageBasedLightingBaker::GenerateBrdfLut(SkyBox* pp_skybox)
 	textureDesc.MiscFlags = 0;
 	ID3D11Texture2D* brdfLutT2d;
 	mp_device->CreateTexture2D(&textureDesc, nullptr, &brdfLutT2d);
+	std::string brdf_lut_name("BRDF LUT");
+	brdfLutT2d->SetPrivateData(WKPDID_D3DDebugObjectName, brdf_lut_name.size(), brdf_lut_name.c_str());
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetDesc = {};
 	renderTargetDesc.Format = textureDesc.Format;
 	renderTargetDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	renderTargetDesc.Texture2D.MipSlice = 0;
 	ID3D11RenderTargetView* renderTargetView;
 	mp_device->CreateRenderTargetView(brdfLutT2d, &renderTargetDesc, &renderTargetView);
+	std::string brdf_lut_rtv_name("BRDF LUT RTV");
+	renderTargetView->SetPrivateData(WKPDID_D3DDebugObjectName, brdf_lut_rtv_name.size(), brdf_lut_rtv_name.c_str());
 
 	float clearColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	mp_context->OMSetRenderTargets(1, &renderTargetView, NULL);

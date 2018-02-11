@@ -20,6 +20,8 @@ ParticleManager::ParticleManager(ID3D11Device * pp_device, ID3D11DeviceContext *
 	depth_stencil_desc.DepthWriteMask			= D3D11_DEPTH_WRITE_MASK_ZERO;
 	depth_stencil_desc.DepthFunc				= D3D11_COMPARISON_LESS;
 	mp_device->CreateDepthStencilState(&depth_stencil_desc, mcp_depth_stencil_state.GetAddressOf());
+	std::string depth_stencil_state_name("Depth (read only) Stencil State");
+	mcp_depth_stencil_state.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, depth_stencil_state_name.size(), depth_stencil_state_name.c_str());
 
 	D3D11_SAMPLER_DESC sampler_bilinear_desc = {};
 	ZeroMemory(&sampler_bilinear_desc, sizeof(D3D11_SAMPLER_DESC));

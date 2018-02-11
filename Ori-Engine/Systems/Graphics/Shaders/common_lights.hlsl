@@ -6,8 +6,8 @@
 interface AbstractLight
 {
 	float3 GetColor();
-	float GetIrradiance(float3 surface_position_ws);
-	float3 GetDirectionToLight(float3 surface_position_ws);
+	float GetIrradiance(float3 surface_position_vs);
+	float3 GetDirectionToLight(float3 surface_position_vs);
 };
 
 class Light : AbstractLight
@@ -16,15 +16,15 @@ class Light : AbstractLight
 	float irradiance;
 
 	float3 GetColor() { return color; }
-	float GetIrradiance(float3 surface_position_ws) { return irradiance; }
-	float3 GetDirectionToLight(float3 surface_position_ws) { return 0; } // virtual
+	float GetIrradiance(float3 surface_position_vs) { return irradiance; }
+	float3 GetDirectionToLight(float3 surface_position_vs) { return 0; } // virtual
 };
 
 class Linked_DirectionalLight : Light
 {
-	float3 direction;
+	float3 direction_vs;
 
-	float3 GetDirectionToLight(float3 surface_position_ws) { return -direction; }
+	float3 GetDirectionToLight(float3 surface_position_vs) { return -direction_vs; }
 };
 
 // use volume stenciling instead
@@ -36,11 +36,11 @@ uint IsInSpotLight(float3 surface_direction_to_light, float3 light_direction, fl
 
 class Linked_SpotLight : Light
 {
-	float3 position_ws;
+	float3 position_vs;
 	//float3 direction;
 	//float angle;
 
-	float3 GetDirectionToLight(float3 surface_position_ws) { return position_ws - surface_position_ws; }
+	float3 GetDirectionToLight(float3 surface_position_vs) { return position_vs - surface_position_vs; }
 };
 
 float PointLightFalloff_UE4(float3 light_position, float light_radius, float3 surface_position)
@@ -51,11 +51,11 @@ float PointLightFalloff_UE4(float3 light_position, float light_radius, float3 su
 
 class Linked_PointLight : Light
 {
-	float3 position_ws;
+	float3 position_vs;
 	float radius;
 
-	float GetIrradiance(float3 surface_position_ws) { return irradiance * PointLightFalloff_UE4(position_ws, radius, surface_position_ws); }
-	float3 GetDirectionToLight(float3 surface_position_ws) { return position_ws - surface_position_ws; }
+	float GetIrradiance(float3 surface_position_vs) { return irradiance * PointLightFalloff_UE4(position_vs, radius, surface_position_vs); }
+	float3 GetDirectionToLight(float3 surface_position_vs) { return position_vs - surface_position_vs; }
 };
 
 

@@ -139,6 +139,8 @@ void D3D11Renderer::OnResize()
 	ID3D11Texture2D* backbuffer_texture;
 	mcp_swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backbuffer_texture));
 	mcp_device->CreateRenderTargetView(backbuffer_texture, 0, &mcp_backbuffer_rtv);
+	std::string back_buffer_rtv_name("Back Buffer RTV");
+	mcp_backbuffer_rtv->SetPrivateData(WKPDID_D3DDebugObjectName, back_buffer_rtv_name.size(), back_buffer_rtv_name.c_str());
 	backbuffer_texture->Release();
 }
 

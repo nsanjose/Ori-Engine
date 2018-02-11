@@ -91,6 +91,8 @@ DeferredRenderer::DeferredRenderer(ID3D11Device* pp_device, ID3D11DeviceContext*
 	clear_shadow_buffer_desc.RenderTarget[2].DestBlendAlpha			= D3D11_BLEND_ONE;
 	clear_shadow_buffer_desc.RenderTarget[2].RenderTargetWriteMask	= D3D11_COLOR_WRITE_ENABLE_ALL;
 	mp_device->CreateBlendState(&clear_shadow_buffer_desc, mcp_clear_shadow_buffer_blend_state.GetAddressOf());
+	std::string clear_shadow_buffer_blend_name("Clearing Shadow Buffer Blend State");
+	mcp_clear_shadow_buffer_blend_state.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, clear_shadow_buffer_blend_name.size(), clear_shadow_buffer_blend_name.c_str());
 
 	D3D11_BLEND_DESC shadow_buffer_blend_desc = {};
 	ZeroMemory(&shadow_buffer_blend_desc, sizeof(D3D11_BLEND_DESC));
@@ -121,6 +123,8 @@ DeferredRenderer::DeferredRenderer(ID3D11Device* pp_device, ID3D11DeviceContext*
 	shadow_buffer_blend_desc.RenderTarget[2].DestBlendAlpha			= D3D11_BLEND_ONE;
 	shadow_buffer_blend_desc.RenderTarget[2].RenderTargetWriteMask	= 0;
 	mp_device->CreateBlendState(&shadow_buffer_blend_desc, mcp_shadow_buffer_blend_state.GetAddressOf());
+	std::string buffering_shadow_blend_name("Shadow Buffering Blend State");
+	mcp_shadow_buffer_blend_state.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, buffering_shadow_blend_name.size(), buffering_shadow_blend_name.c_str());
 
 	D3D11_BLEND_DESC gbuffer_blend_desc = {};
 	ZeroMemory(&gbuffer_blend_desc, sizeof(D3D11_BLEND_DESC));
@@ -151,6 +155,8 @@ DeferredRenderer::DeferredRenderer(ID3D11Device* pp_device, ID3D11DeviceContext*
 	gbuffer_blend_desc.RenderTarget[2].DestBlendAlpha			= D3D11_BLEND_ZERO;
 	gbuffer_blend_desc.RenderTarget[2].RenderTargetWriteMask	= D3D11_COLOR_WRITE_ENABLE_ALPHA;
 	mp_device->CreateBlendState(&gbuffer_blend_desc, mcp_gbuffer_blend_state.GetAddressOf());
+	std::string gbuffer_blend_name("GBuffering Blend State");
+	mcp_gbuffer_blend_state.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, gbuffer_blend_name.size(), gbuffer_blend_name.c_str());
 
 	D3D11_BLEND_DESC accumulate_shading_blend_desc = {};
 	ZeroMemory(&accumulate_shading_blend_desc, sizeof(D3D11_BLEND_DESC));
@@ -165,6 +171,8 @@ DeferredRenderer::DeferredRenderer(ID3D11Device* pp_device, ID3D11DeviceContext*
 	accumulate_shading_blend_desc.RenderTarget[0].DestBlendAlpha		= D3D11_BLEND_ONE;
 	accumulate_shading_blend_desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED | D3D11_COLOR_WRITE_ENABLE_GREEN | D3D11_COLOR_WRITE_ENABLE_BLUE;
 	mp_device->CreateBlendState(&accumulate_shading_blend_desc, mcp_accumulate_shading_blend_state.GetAddressOf());
+	std::string accumulate_light_blend_name("Additive Light Blend State");
+	mcp_accumulate_shading_blend_state.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, accumulate_light_blend_name.size(), accumulate_light_blend_name.c_str());
 
 	InitializeGBuffer();
 	InitializeSSAO();
@@ -198,17 +206,23 @@ void DeferredRenderer::InitializeGBuffer()
 		texture_desc.CPUAccessFlags				= 0;
 		texture_desc.MiscFlags					= 0;
 		mp_device->CreateTexture2D(&texture_desc, nullptr, mcp_gbuffer_textures[i].GetAddressOf());
+		std::string gbuffer_texture_name("GBuffer " + std::to_string(i) + " Texture");
+		mcp_gbuffer_textures[i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, gbuffer_texture_name.size(), gbuffer_texture_name.c_str());
 		D3D11_RENDER_TARGET_VIEW_DESC rtv_desc	= {};
 		rtv_desc.Format							= texture_desc.Format;
 		rtv_desc.ViewDimension					= D3D11_RTV_DIMENSION_TEXTURE2D;
 		rtv_desc.Texture2D.MipSlice				= 0;
 		mp_device->CreateRenderTargetView(mcp_gbuffer_textures[i].Get(), &rtv_desc, mcp_gbuffer_rtvs[i].GetAddressOf());
+		std::string gbuffer_rtv_name("GBuffer " + std::to_string(i) + " RTV");
+		mcp_gbuffer_rtvs[i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, gbuffer_rtv_name.size(), gbuffer_rtv_name.c_str());
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc	= {};
 		srv_desc.Format								= texture_desc.Format;
 		srv_desc.ViewDimension						= D3D11_SRV_DIMENSION_TEXTURE2D;
 		srv_desc.Texture2D.MostDetailedMip			= 0;
 		srv_desc.Texture2D.MipLevels				= 1;
 		mp_device->CreateShaderResourceView(mcp_gbuffer_textures[i].Get(), &srv_desc, mcp_gbuffer_srvs[i].GetAddressOf());
+		std::string gbuffer_srv_name("GBuffer " + std::to_string(i) + " SRV");
+		mcp_gbuffer_srvs[i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, gbuffer_srv_name.size(), gbuffer_srv_name.c_str());
 	}
 	
 	// Depth/Stencil
@@ -236,8 +250,14 @@ void DeferredRenderer::InitializeGBuffer()
 	depth_srv_desc.Texture2D.MipLevels				= 1;
 	ID3D11Texture2D* depth_texture;
 	mp_device->CreateTexture2D(&depth_texture_desc, 0, &depth_texture);
+	std::string depth_stencil_texture_name("GBuffer Depth/Stencil Texture");
+	depth_texture->SetPrivateData(WKPDID_D3DDebugObjectName, depth_stencil_texture_name.size(), depth_stencil_texture_name.c_str());
 	mp_device->CreateDepthStencilView(depth_texture, &dsv_desc, mcp_depth_stencil_view.GetAddressOf());
+	std::string depth_stencil_v_name("GBuffer Depth/Stencil View");
+	mcp_depth_stencil_view.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, depth_stencil_v_name.size(), depth_stencil_v_name.c_str());
 	mp_device->CreateShaderResourceView(depth_texture, &depth_srv_desc, mcp_depth_srv.GetAddressOf());
+	std::string depth_stencil_srv_name("GBuffer Depth/Stencil SRV");
+	mcp_depth_srv.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, depth_stencil_srv_name.size(), depth_stencil_srv_name.c_str());
 	depth_texture->Release();
 }
 
@@ -424,15 +444,19 @@ void DeferredRenderer::PopulateGBuffers(const std::vector<std::unique_ptr<Entity
 		Deferred Shading
 		Second Pass: Composite Lighting with G-Buffer
 	=====================================================================================================	*/
-void DeferredRenderer::CompositeShading(const Entity & pCamera, const Entity & pSun, ID3D11RenderTargetView * prtvFrameBuffer)
+void DeferredRenderer::CompositeShading(const Entity & pr_camera, const Entity & pr_light, ID3D11RenderTargetView * pp_rtv)
 {
-	CameraComponent* camera_component = pCamera.GetComponentByType<CameraComponent>();
+	CameraComponent* camera_component = pr_camera.GetComponentByType<CameraComponent>();
 	if (camera_component == nullptr) { return; }
-	LightComponent* light_component = pSun.GetComponentByType<LightComponent>();
+	LightComponent* light_component = pr_light.GetComponentByType<LightComponent>();
 	if (light_component == nullptr) { return; }
+	TransformComponent& light_transform_component = pr_light.GetTransformComponent();
 
 	mp_context->OMSetBlendState(mcp_accumulate_shading_blend_state.Get(), 0, 0xfffffff);
 	mr_quad_renderer.SetVertexShader();
+
+	mup_deferred_composite_pixel_shader->SetConstantBufferMatrix4x4("inverse_projection_matrix", camera_component->m_inverse_projection_matrix);
+	XMMATRIX temp_camera_view_matrix = XMMatrixTranspose(XMLoadFloat4x4(&camera_component->m_view_matrix));
 
 	// dynamic shader linkage for light type
 	Light* generic_light = light_component->GetGenericLight();
@@ -441,23 +465,34 @@ void DeferredRenderer::CompositeShading(const Entity & pCamera, const Entity & p
 		mup_deferred_composite_pixel_shader->SetInterfaceToClass("light", "directional_light");
 		mup_deferred_composite_pixel_shader->SetConstantBufferFloat3("directional_light:Light.color", directional_light->m_color);
 		mup_deferred_composite_pixel_shader->SetConstantBufferFloat("directional_light:Light.irradiance", directional_light->m_irradiance);
-		mup_deferred_composite_pixel_shader->SetConstantBufferFloat3("directional_light.direction", pSun.GetTransformComponent().m_rotation);
+		XMFLOAT4 light_direction_world_space(light_transform_component.m_rotation.x, light_transform_component.m_rotation.y, light_transform_component.m_rotation.z, 0);
+		XMVECTOR temp_light_direction_view_space = DirectX::XMVector4Transform(XMLoadFloat4(&light_direction_world_space), temp_camera_view_matrix);
+		XMFLOAT3 light_direction_view_space;
+		XMStoreFloat3(&light_direction_view_space, temp_light_direction_view_space);
+		mup_deferred_composite_pixel_shader->SetConstantBufferFloat3("directional_light.direction_vs", light_direction_view_space);
 	}
 	else if (SpotLight* spot_light = dynamic_cast<SpotLight*>(generic_light))
 	{
 		mup_deferred_composite_pixel_shader->SetInterfaceToClass("light", "spot_light");
 		mup_deferred_composite_pixel_shader->SetConstantBufferFloat3("spot_light:Light.color", spot_light->m_color);
 		mup_deferred_composite_pixel_shader->SetConstantBufferFloat("spot_light:Light.irradiance", spot_light->m_irradiance);
-		mup_deferred_composite_pixel_shader->SetConstantBufferFloat3("spot_light position_ws", pSun.GetTransformComponent().m_position);
+		XMVECTOR temp_light_position_view_space = DirectX::XMVector3Transform(XMLoadFloat3(&light_transform_component.m_position), temp_camera_view_matrix);
+		XMFLOAT3 light_position_view_space;
+		XMStoreFloat3(&light_position_view_space, temp_light_position_view_space);
+		mup_deferred_composite_pixel_shader->SetConstantBufferFloat3("spot_light position_vs", light_position_view_space);
 	}
 	else if (PointLight* point_light = dynamic_cast<PointLight*>(generic_light))
 	{
 		mup_deferred_composite_pixel_shader->SetInterfaceToClass("light", "point_light");
 		mup_deferred_composite_pixel_shader->SetConstantBufferFloat3("point_light:Light.color", point_light->m_color);
 		mup_deferred_composite_pixel_shader->SetConstantBufferFloat("point_light:Light.irradiance", point_light->m_irradiance);
-		mup_deferred_composite_pixel_shader->SetConstantBufferFloat3("point_light.position_ws", pSun.GetTransformComponent().m_position);
 		mup_deferred_composite_pixel_shader->SetConstantBufferFloat("point_light.radius", point_light->m_radius);
+		XMVECTOR temp_light_position_view_space = DirectX::XMVector3Transform(XMLoadFloat3(&light_transform_component.m_position), temp_camera_view_matrix);
+		XMFLOAT3 light_position_view_space;
+		XMStoreFloat3(&light_position_view_space, temp_light_position_view_space);
+		mup_deferred_composite_pixel_shader->SetConstantBufferFloat3("point_light position_vs", light_position_view_space);
 	}
+	mup_deferred_composite_pixel_shader->UpdateAllConstantBuffers();
 	mup_deferred_composite_pixel_shader->SetShader();
 
 	// G-Buffer
@@ -467,13 +502,7 @@ void DeferredRenderer::CompositeShading(const Entity & pCamera, const Entity & p
 	mup_deferred_composite_pixel_shader->SetShaderResourceView("gbuffer_2", mcp_gbuffer_srvs[2].Get());
 	mup_deferred_composite_pixel_shader->SetShaderResourceView("gbuffer_3", mcp_depth_srv.Get());
 
-	// Reconstructing positionWS
-	mup_deferred_composite_pixel_shader->SetConstantBufferMatrix4x4("inverse_view_matrix", camera_component->m_inverse_view);
-	mup_deferred_composite_pixel_shader->SetConstantBufferMatrix4x4("inverse_projection_matrix", camera_component->m_inverse_projection_matrix);
-	mup_deferred_composite_pixel_shader->SetConstantBufferFloat3("camera_position_world_space", pCamera.GetTransformComponent().m_position);
-	mup_deferred_composite_pixel_shader->UpdateAllConstantBuffers();
-
-	mp_context->OMSetRenderTargets(1, &prtvFrameBuffer, 0);
+	mp_context->OMSetRenderTargets(1, &pp_rtv, 0);
 	mr_quad_renderer.Draw((float)mr_width, (float)mr_height);
 
 	// Unbind resources
@@ -507,8 +536,8 @@ void DeferredRenderer::ApplyIBL(const Entity& pr_camera, SkyBox* pp_skybox, ID3D
 
 	// Reconstructing positionWS
 	CameraComponent* camera_component = pr_camera.GetComponentByType<CameraComponent>();
-	mup_deferred_apply_ibl_pixel_shader->SetConstantBufferMatrix4x4("inverse_view_matrix", camera_component->m_inverse_view);
 	mup_deferred_apply_ibl_pixel_shader->SetConstantBufferMatrix4x4("inverse_projection_matrix", camera_component->m_inverse_projection_matrix);
+	mup_deferred_apply_ibl_pixel_shader->SetConstantBufferMatrix4x4("inverse_view_matrix", camera_component->m_inverse_view);
 	mup_deferred_apply_ibl_pixel_shader->SetConstantBufferFloat3("camera_position_world_space", pr_camera.GetTransformComponent().m_position);
 	mup_deferred_apply_ibl_pixel_shader->UpdateAllConstantBuffers();
 
@@ -547,8 +576,12 @@ void DeferredRenderer::InitializeSSAO()
 	ssao_blend_desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
 	ssao_blend_desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_BLUE;
 	mp_device->CreateBlendState(&ssao_blend_desc, mcp_ssao_blend_state.GetAddressOf());
+	std::string ssao_blend_name("SSAO Buffering Blend State");
+	mcp_ssao_blend_state.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, ssao_blend_name.size(), ssao_blend_name.c_str());
 
 	CreateWICTextureFromFile(mp_device, mp_context, L"Resources/Texture Files/noise.png", 0, mcp_noise_map_srv.GetAddressOf());
+	std::string ssao_noise_map_name("SSAO Noise Map SRV");
+	mcp_noise_map_srv.Get()->SetPrivateData(WKPDID_D3DDebugObjectName, ssao_noise_map_name.size(), ssao_noise_map_name.c_str());
 }
 
 void DeferredRenderer::SSAO(const Entity& pr_camera)
@@ -596,19 +629,20 @@ void DeferredRenderer::InitializeDebugBufferPosition()
 
 	for (int i = 0; i < m_DEBUG_BUFFER_POSITION_COUNT; i++)
 	{
-		std::string buffer_name = "PositionBuffer";
+		std::string buffer_name = "Position";
 		switch (i)
 		{
 		case 0:
-			buffer_name += "_Clip_Space";
+			buffer_name += " Clip Space";
 			break;
 		case 1:
-			buffer_name += "_View_Space";
+			buffer_name += " View Space";
 			break;
 		case 2:
-			buffer_name += "_World_Space";
+			buffer_name += " World Space";
 			break;
 		}
+		buffer_name += " Buffer";
 
 		D3D11_TEXTURE2D_DESC texture_desc = {};
 		texture_desc.Width				= mr_width;
@@ -623,16 +657,16 @@ void DeferredRenderer::InitializeDebugBufferPosition()
 		texture_desc.CPUAccessFlags		= 0;
 		texture_desc.MiscFlags			= 0;
 		mp_device->CreateTexture2D(&texture_desc, nullptr, position_buffer_textures[i].GetAddressOf());
-		std::string texture_name(buffer_name + "_Texture");
-		position_buffer_textures[i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(texture_name.c_str()), texture_name.c_str());
+		std::string texture_name(buffer_name + " Texture");
+		position_buffer_textures[i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, texture_name.size(), texture_name.c_str());
 
 		D3D11_RENDER_TARGET_VIEW_DESC rtv_desc = {};
 		rtv_desc.Format					= texture_desc.Format;
 		rtv_desc.ViewDimension			= D3D11_RTV_DIMENSION_TEXTURE2D;
 		rtv_desc.Texture2D.MipSlice		= 0;
 		mp_device->CreateRenderTargetView(position_buffer_textures[i].Get(), &rtv_desc, position_buffer_rtvs[i].GetAddressOf());
-		std::string rtv_name(buffer_name + "_RTV");
-		position_buffer_rtvs[i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(rtv_name.c_str()), rtv_name.c_str());
+		std::string rtv_name(buffer_name + " RTV");
+		position_buffer_rtvs[i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, rtv_name.size(), rtv_name.c_str());
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
 		srv_desc.Format						= texture_desc.Format;
@@ -640,14 +674,20 @@ void DeferredRenderer::InitializeDebugBufferPosition()
 		srv_desc.Texture2D.MostDetailedMip	= 0;
 		srv_desc.Texture2D.MipLevels		= 1;
 		mp_device->CreateShaderResourceView(position_buffer_textures[i].Get(), &srv_desc, position_buffer_srvs[i].GetAddressOf());
-		std::string srv_name(buffer_name + "_SRV");
-		position_buffer_srvs[i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(srv_name.c_str()), srv_name.c_str());
+		std::string srv_name(buffer_name + " SRV");
+		position_buffer_srvs[i].Get()->SetPrivateData(WKPDID_D3DDebugObjectName, srv_name.size(), srv_name.c_str());
 	}
 }
 
 
 void DeferredRenderer::DebugBufferPositions(const std::vector<std::unique_ptr<Entity>>& pr_entities, const Entity& pr_camera)
 {
+	float zero_color[4] = { 0, 0, 0, 0 };
+	for (UINT i = 0; i < m_DEBUG_BUFFER_POSITION_COUNT; i++)
+	{
+		mp_context->ClearRenderTargetView(position_buffer_rtvs[i].Get(), zero_color);
+	}
+
 	D3D11_VIEWPORT vp = { 0.0f, 0.0f, (float)mr_width, (float)mr_height, 0.0f, 1.0f };
 	mp_context->RSSetViewports(1, &vp);
 
